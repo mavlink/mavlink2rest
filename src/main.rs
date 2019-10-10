@@ -1,0 +1,149 @@
+use actix_web::{web, App, HttpRequest, HttpServer, Responder};
+
+use std::sync::{Arc, Mutex};
+use std::thread;
+
+use std::time::Duration;
+
+use serde_json::json;
+
+use clap;
+
+#[macro_use]
+extern crate lazy_static;
+
+lazy_static! {
+    static ref MESSAGES: std::sync::Arc<Mutex<serde_json::value::Value>> = {
+        let map = Arc::new(Mutex::new(json!({"mavlink":{}})));
+        map
+    };
+}
+
+fn main() {
+    let matches = clap::App::new(env!("CARGO_PKG_NAME"))
+        .version(env!("CARGO_PKG_VERSION"))
+        .about("MAVLink to REST API!.")
+        .author(env!("CARGO_PKG_AUTHORS"))
+        .arg(
+            clap::Arg::with_name("connect")
+                .short("c")
+                .long("connect")
+                .value_name("TYPE:<IP/SERIAL>:<PORT/BAUDRATE>")
+                .help("Sets the mavlink connection string")
+                .takes_value(true)
+                .default_value("udpin:0.0.0.0:14550"),
+        )
+        .arg(
+            clap::Arg::with_name("server")
+                .short("s")
+                .long("server")
+                .value_name("IP:PORT")
+                .help("Sets the IP and port that the rest server will be provided")
+                .takes_value(true)
+                .default_value("0.0.0.0:8088"),
+        )
+        .get_matches();
+
+    let server_string = matches.value_of("server").unwrap();
+    let connection_string = matches.value_of("connect").unwrap();
+
+    println!("MAVLink connection string: {}", connection_string);
+    println!("REST API address: {}", server_string);
+
+    let mavconn = mavlink::connect(connection_string).unwrap();
+
+    let vehicle = Arc::new(mavconn);
+    let _ = vehicle.send_default(&request_stream());
+
+    thread::spawn({
+        let vehicle = vehicle.clone();
+        move || loop {
+            let res = vehicle.send_default(&heartbeat_message());
+            if res.is_ok() {
+                thread::sleep(Duration::from_secs(1));
+            } else {
+                println!("Failed to send heartbeat");
+            }
+        }
+    });
+
+    thread::spawn({
+        let vehicle = vehicle.clone();
+        let messages_ref = Arc::clone(&MESSAGES);
+        move || {
+            loop {
+                match vehicle.recv() {
+                    Ok((_header, msg)) => {
+                        let value = serde_json::to_value(&msg).unwrap();
+                        let mut msgs = messages_ref.lock().unwrap();
+                        // Remove " from string
+                        let msg_type = value["type"].to_string().replace("\"", "");
+                        msgs["mavlink"][msg_type] = value;
+                    }
+                    Err(e) => {
+                        match e.kind() {
+                            std::io::ErrorKind::WouldBlock => {
+                                //no messages currently available to receive -- wait a while
+                                thread::sleep(Duration::from_secs(1));
+                                continue;
+                            }
+                            _ => {
+                                println!("recv error: {:?}", e);
+                                break;
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    });
+
+    HttpServer::new(|| {
+        App::new()
+            .route("/", web::get().to(root_page))
+            .route("/mavlink", web::get().to(mavlink_page))
+            .route("/mavlink/*", web::get().to(mavlink_page))
+    })
+    .bind(server_string)
+    .unwrap()
+    .run()
+    .unwrap();
+    println!("Running!");
+}
+
+fn root_page(_req: HttpRequest) -> impl Responder {
+    return format!("Wubba Lubba dub-dub");
+}
+
+fn mavlink_page(req: HttpRequest) -> impl Responder {
+    let url_path = req.uri().to_string();
+    let messages_ref = Arc::clone(&MESSAGES);
+    let message = messages_ref.lock().unwrap();
+    let final_result = (*message).pointer(&url_path);
+
+    if final_result.is_none() {
+        return format!("{}", "No valid path");
+    }
+    return format!("{}", serde_json::to_string(final_result.unwrap()).unwrap());
+}
+
+pub fn heartbeat_message() -> mavlink::common::MavMessage {
+    mavlink::common::MavMessage::HEARTBEAT(mavlink::common::HEARTBEAT_DATA {
+        custom_mode: 0,
+        mavtype: mavlink::common::MavType::MAV_TYPE_QUADROTOR,
+        autopilot: mavlink::common::MavAutopilot::MAV_AUTOPILOT_ARDUPILOTMEGA,
+        base_mode: mavlink::common::MavModeFlag::empty(),
+        system_status: mavlink::common::MavState::MAV_STATE_STANDBY,
+        mavlink_version: 0x3,
+    })
+}
+
+pub fn request_stream() -> mavlink::common::MavMessage {
+    mavlink::common::MavMessage::REQUEST_DATA_STREAM(mavlink::common::REQUEST_DATA_STREAM_DATA {
+        target_system: 0,
+        target_component: 0,
+        req_stream_id: 0,
+        req_message_rate: 10,
+        start_stop: 1,
+    })
+}
