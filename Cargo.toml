@@ -12,8 +12,6 @@ actix-web = "1.0.8"
 clap = "2.31.2"
 inner = "0.1.1"
 lazy_static = "1.4.0"
+mavlink = "0.6"
 rustc-serialize = "0.3.24"
 serde_json = "1.0.41"
-
-# It's not available in a release yet
-mavlink = { git = "https://github.com/mavlink/rust-mavlink", branch = "master" }
