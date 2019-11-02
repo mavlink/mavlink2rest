@@ -9,8 +9,7 @@ use serde_json::json;
 
 use clap;
 
-#[macro_use]
-extern crate lazy_static;
+use lazy_static::lazy_static;
 
 lazy_static! {
     static ref MESSAGES: std::sync::Arc<Mutex<serde_json::value::Value>> = {
