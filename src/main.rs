@@ -13,8 +13,8 @@ use lazy_static::lazy_static;
 
 lazy_static! {
     static ref MESSAGES: std::sync::Arc<Mutex<serde_json::value::Value>> = {
-        let map = Arc::new(Mutex::new(json!({"mavlink":{}})));
-        map
+        // Create an empty map with the main key as mavlink
+        return Arc::new(Mutex::new(json!({"mavlink":{}})));
     };
 }
 
@@ -111,7 +111,7 @@ fn main() {
 }
 
 fn root_page(_req: HttpRequest) -> impl Responder {
-    return format!("Wubba Lubba dub-dub");
+    return "Wubba Lubba dub-dub".to_string();
 }
 
 fn mavlink_page(req: HttpRequest) -> impl Responder {
@@ -121,9 +121,9 @@ fn mavlink_page(req: HttpRequest) -> impl Responder {
     let final_result = (*message).pointer(&url_path);
 
     if final_result.is_none() {
-        return format!("{}", "No valid path");
+        return "No valid path".to_string();
     }
-    return format!("{}", serde_json::to_string(final_result.unwrap()).unwrap());
+    return serde_json::to_string(final_result.unwrap()).unwrap().to_string();
 }
 
 pub fn heartbeat_message() -> mavlink::common::MavMessage {
