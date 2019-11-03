@@ -1,16 +1,12 @@
-use actix_web::{web, App, HttpRequest, HttpServer, Responder};
-
 use std::sync::{Arc, Mutex};
 use std::thread;
-
 use std::time::Duration;
 
+use actix_web::{web, App, HttpRequest, HttpServer, Responder};
+use clap;
 use serde_json::json;
 
-use clap;
-
 use lazy_static::lazy_static;
-
 lazy_static! {
     static ref MESSAGES: std::sync::Arc<Mutex<serde_json::value::Value>> = {
         // Create an empty map with the main key as mavlink
