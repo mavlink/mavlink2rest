@@ -2,7 +2,7 @@
 `mavlink2rest` creates a REST server that provides mavlink information from a mavlink source.
 
 ## Install :zap:
-- :gear: Cargo Install: **Not available yet**
+- :gear: Cargo Install: `cargo install mavlink2rest`
 
 ## Downloads :package:
 
