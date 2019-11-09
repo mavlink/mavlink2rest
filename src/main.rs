@@ -96,8 +96,7 @@ fn main() {
     HttpServer::new(|| {
         App::new()
             .route("/", web::get().to(root_page))
-            .route("/mavlink", web::get().to(mavlink_page))
-            .route("/mavlink/*", web::get().to(mavlink_page))
+            .route("/mavlink|/mavlink/*", web::get().to(mavlink_page))
     })
     .bind(server_string)
     .unwrap()
