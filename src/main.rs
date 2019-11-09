@@ -102,7 +102,6 @@ fn main() {
     .unwrap()
     .run()
     .unwrap();
-    println!("Running!");
 }
 
 fn root_page(_req: HttpRequest) -> impl Responder {
