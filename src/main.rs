@@ -4,7 +4,45 @@ use std::time::Duration;
 
 use actix_web::{web, App, HttpRequest, HttpServer, Responder};
 use clap;
+use serde::Serialize;
 use serde_json::json;
+
+use chrono;
+
+#[derive(Serialize, Debug, Copy, Clone)]
+struct Time {
+    first_message: chrono::DateTime<chrono::Local>,
+    last_message: chrono::DateTime<chrono::Local>,
+}
+
+#[derive(Serialize, Debug, Copy, Clone)]
+struct MessageInformation {
+    counter: i64,
+    frequency: f32,
+    time: Time,
+}
+
+impl Default for MessageInformation {
+    fn default() -> MessageInformation {
+        return MessageInformation {
+            counter: 0,
+            frequency: 0.0,
+            time: Time {
+                first_message: chrono::Local::now(),
+                last_message: chrono::Local::now(),
+            },
+        };
+    }
+}
+
+impl MessageInformation {
+    pub fn update(&mut self) {
+        self.counter += 1;
+        self.time.last_message = chrono::Local::now();
+        self.frequency = (self.counter as f32)
+            / ((self.time.last_message - self.time.first_message).num_seconds() as f32);
+    }
+}
 
 use lazy_static::lazy_static;
 lazy_static! {
@@ -65,6 +103,11 @@ fn main() {
     thread::spawn({
         let vehicle = vehicle.clone();
         let messages_ref = Arc::clone(&MESSAGES);
+
+        let mut messages_information: std::collections::HashMap<
+            std::string::String,
+            MessageInformation,
+        > = std::collections::HashMap::new();
         move || {
             loop {
                 match vehicle.recv() {
@@ -73,7 +116,15 @@ fn main() {
                         let mut msgs = messages_ref.lock().unwrap();
                         // Remove " from string
                         let msg_type = value["type"].to_string().replace("\"", "");
-                        msgs["mavlink"][msg_type] = value;
+                        msgs["mavlink"][&msg_type] = value;
+
+                        // Update message_information
+                        let message_information = messages_information
+                            .entry(msg_type.clone())
+                            .or_insert(MessageInformation::default());
+                        message_information.update();
+                        msgs["mavlink"][&msg_type]["message_information"] =
+                            serde_json::to_value(messages_information[&msg_type]).unwrap();
                     }
                     Err(e) => {
                         match e.kind() {
@@ -117,7 +168,9 @@ fn mavlink_page(req: HttpRequest) -> impl Responder {
     if final_result.is_none() {
         return "No valid path".to_string();
     }
-    return serde_json::to_string(final_result.unwrap()).unwrap().to_string();
+    return serde_json::to_string(final_result.unwrap())
+        .unwrap()
+        .to_string();
 }
 
 pub fn heartbeat_message() -> mavlink::common::MavMessage {
