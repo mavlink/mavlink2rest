@@ -1,0 +1,40 @@
+environment:
+  PROJECT_NAME: mavlink2rest
+  matrix:
+    - TARGET: i686-pc-windows-msvc
+      CHANNEL: stable
+
+# Install Rust and Cargo
+# (Based on from https://github.com/rust-lang/libc/blob/master/appveyor.yml)
+install:
+  - if %APPVEYOR_REPO_TAG%==true (set RELEASE_NAME=%APPVEYOR_REPO_TAG_NAME%) else set RELEASE_NAME=continuous
+  - if %RELEASE_NAME%==master (set RELEASE_NAME=continuous)
+  - curl -sSf -o rustup-init.exe https://win.rustup.rs
+  - rustup-init.exe --default-host %TARGET% --default-toolchain %CHANNEL% -y
+  - set PATH=%PATH%;C:\Users\appveyor\.cargo\bin
+  - rustc -Vv
+  - cargo -V
+
+build_script:
+  # Generate artifacts for release
+  - cargo build --release
+  - mkdir deploy
+  - copy target\release\%PROJECT_NAME%.exe deploy
+  - cd deploy
+    # release zipfile will look like 'rust-everywhere-v1.2.3-x86_64-pc-windows-msvc'
+  - 7z a ../%PROJECT_NAME%-%TARGET%.zip *
+  - cd ..
+  - ls
+
+artifacts:
+  - path: '%PROJECT_NAME%-%TARGET%.zip'
+    name: '%PROJECT_NAME%-%TARGET%'
+
+deploy:
+  tag: $(RELEASE_NAME)
+  release: $(RELEASE_NAME)
+  # All the zipped artifacts will be deployed
+  artifact: /.*\.zip/
+  auth_token:
+    secure: Hg+tE5KYjNzja+KQpRNU2tJwmqd/cEofh7N8Lcx9jQnDfFz3PBz/vnA4j7obQTb+
+  provider: GitHub
