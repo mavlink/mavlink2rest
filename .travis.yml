@@ -1,0 +1,67 @@
+dist: xenial
+language: rust
+sudo: required
+
+env:
+  global:
+    - CRATE_NAME=mavlink2rest
+
+matrix:
+  include:
+    - os: linux
+      dist: xenial
+      env:
+        - TARGET=armv7-unknown-linux-musleabihf
+        - LINKER=gcc-5-arm-linux-gnueabihf
+        - COMPILER=arm-linux-gnueabihf-gcc-5
+      addons:
+        apt:
+          packages:
+            - libudev-dev
+
+    - os: linux
+      dist: xenial
+      env:
+        - TARGET=x86_64-unknown-linux-musl
+        - LINKER=gcc
+        - COMPILER=gcc
+      addons:
+        apt:
+          packages:
+            - libudev-dev
+
+    - os: osx
+      compiler: clang
+      env:
+        - TARGET=x86_64-apple-darwin
+        - LINKER=clang
+        - COMPILER=clang
+
+before_install:
+  - set -e
+  - rustup self update
+
+install:
+  - if [ $TRAVIS_OS_NAME = linux ]; then sudo apt install -y $LINKER; fi
+  - rustup install stable
+  - rustup default stable
+  - rustup target install $TARGET
+  - RUSTFLAGS="-C linker=$LINKER" cargo build --verbose --release --target=$TARGET
+  - cp target/$TARGET/release/$CRATE_NAME $CRATE_NAME-$TARGET
+
+before_deploy:
+  - git config --local user.name "Patrick José Pereira"
+  - git config --local user.email "patrickelectric@gmail.com"
+  - export TRAVIS_TAG=${TRAVIS_TAG:-continuous}
+  - git tag $TRAVIS_TAG --force
+
+deploy:
+  provider: releases
+  api_key:
+    secure: a4UjRLJV8oreTDEqMbudUYyChSRMgD7v+U3SvAh/q+HiPhG1q1KzdUMQBcINgl453xEbA+8mf7jxlZW9falRwjy/idIfeaPS+il3nPt4c04HzvOdAM7Qbx6pmexwn5qwskSFPrOiIEQEadaer6axtA6F3bMkqszxDwQ093f0JtZ75/PLzuatRmmpH3KGIbRKM+CIj8C1renj8M2LMLfdhbVY8yvT3xYVofj/7Cb6ZwmvtM9vdLr7UGIeOh3x9V8nhJxd6vaA+Hnf+O5+YREaxGPELcUJygKl0dt4QbhyLbaPKQtyo2BjBSQ1qxVSQ0S8Q1aqBKY6CGYPOT4i+KSwEZyIziOeOjPwOBFgcfPShPVj/2BYep8HFhzSJ0M8wc6XqpeOAxefxpaJzO2n+GG0JgsJlkrIH0JOLjbaKqT3gS0fwtp2c+jaYUSrlljQTsdTY5inDLPypSyjll6F0K2v/WzPY+IJLXp+yAlNrrrYV+psU8CDcjCla+ulW/qKiJ1NatJDRtlLxDDTUEo7aXsT+xEC26ozk7R7uolfSyUVHURtg0cIRcJDVZuJSNS2Y7/FmeVnK/wuqOqKmfLtVn0MWebyc2HYeMx/oeUrW64Vgxo9V6gCgtwM53z/WKwkkHtEdDRx/CQHVEVkrCupF91RyHQHl+9otzd+52qiAF141eY=
+  file_glob: true
+  overwrite: true
+  skip_cleanup: true
+  file: $CRATE_NAME-$TARGET
+  on:
+    all_branches: true
