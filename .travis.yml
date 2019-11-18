@@ -12,8 +12,6 @@ matrix:
       dist: xenial
       env:
         - TARGET=armv7-unknown-linux-musleabihf
-        - LINKER=gcc-5-arm-linux-gnueabihf
-        - COMPILER=arm-linux-gnueabihf-gcc-5
       addons:
         apt:
           packages:
@@ -23,8 +21,6 @@ matrix:
       dist: xenial
       env:
         - TARGET=x86_64-unknown-linux-musl
-        - LINKER=gcc
-        - COMPILER=gcc
       addons:
         apt:
           packages:
@@ -34,8 +30,6 @@ matrix:
       compiler: clang
       env:
         - TARGET=x86_64-apple-darwin
-        - LINKER=clang
-        - COMPILER=clang
 
 before_install:
   - set -e
@@ -45,8 +39,8 @@ install:
   - if [ $TRAVIS_OS_NAME = linux ]; then sudo apt install -y $LINKER; fi
   - rustup install stable
   - rustup default stable
-  - rustup target install $TARGET
-  - RUSTFLAGS="-C linker=$LINKER" cargo build --verbose --release --target=$TARGET
+  - cargo install cross
+  - cross build --verbose --release --target=$TARGET
   - cp target/$TARGET/release/$CRATE_NAME $CRATE_NAME-$TARGET
 
 before_deploy:
