@@ -6,7 +6,7 @@
 
 ## Downloads :package:
 
-- :computer: **Not available yet**
-- :apple: **Not available yet**
-- :penguin: **Not available yet**
-- :strawberry: **Not available yet**
+- :computer: [**Windows**](https://github.com/patrickelectric/mavlink2rest/releases/download/continuous/mavlink2rest-i686-pc-windows-msvc.zip)
+- :apple: [**MacOS**](https://github.com/patrickelectric/mavlink2rest/releases/download/continuous/mavlink2rest-x86_64-apple-darwin)
+- :penguin: [**Linux**](https://github.com/patrickelectric/mavlink2rest/releases/download/continuous/mavlink2rest-x86_64-unknown-linux-musl)
+- :strawberry: [**Raspberry**](https://github.com/patrickelectric/mavlink2rest/releases/download/continuous/mavlink2rest-armv7-unknown-linux-musleabihf)
