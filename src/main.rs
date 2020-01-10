@@ -2,7 +2,8 @@ use std::sync::{Arc, Mutex};
 use std::thread;
 use std::time::Duration;
 
-use actix_web::{web, App, HttpRequest, HttpServer, Responder};
+use actix_web::http::StatusCode;
+use actix_web::{web, App, HttpRequest, HttpResponse, HttpServer, Responder};
 use clap;
 use serde_json::json;
 
@@ -132,7 +133,18 @@ fn main() {
 }
 
 fn root_page(_req: HttpRequest) -> impl Responder {
-    return "Wubba Lubba dub-dub".to_string();
+    let html = format!(
+        "{} - {} - {}<br>By: {}<br>
+        Check the <a href=\"\\mavlink\">mavlink path</a> for the data<br>
+        You can also check nested paths: <a href=\"mavlink/HEARTBEAT/mavtype/type\">mavlink/HEARTBEAT/mavtype/type</a>",
+        env!("CARGO_PKG_NAME"),
+        env!("VERGEN_SEMVER"),
+        env!("VERGEN_BUILD_DATE"),
+        env!("CARGO_PKG_AUTHORS"),
+    );
+    HttpResponse::build(StatusCode::OK)
+        .content_type("text/html; charset=utf-8")
+        .body(html)
 }
 
 fn mavlink_page(req: HttpRequest) -> impl Responder {
