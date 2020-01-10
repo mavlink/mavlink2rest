@@ -40,8 +40,16 @@ fn main() {
                 .takes_value(true)
                 .default_value("0.0.0.0:8088"),
         )
+        .arg(
+            clap::Arg::with_name("verbose")
+                .short("v")
+                .long("verbose")
+                .help("Be verbose")
+                .takes_value(false),
+        )
         .get_matches();
 
+    let verbose = matches.is_present("verbose");
     let server_string = matches.value_of("server").unwrap();
     let connection_string = matches.value_of("connect").unwrap();
 
@@ -82,6 +90,9 @@ fn main() {
                         // Remove " from string
                         let msg_type = value["type"].to_string().replace("\"", "");
                         msgs["mavlink"][&msg_type] = value;
+                        if verbose {
+                            println!("Got: {}", msg_type);
+                        }
 
                         // Update message_information
                         let message_information = messages_information
