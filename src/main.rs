@@ -148,34 +148,31 @@ fn root_page(_req: HttpRequest) -> impl Responder {
         .body(html)
 }
 
-#[derive(Deserialize, Debug)]
+#[derive(Deserialize, Debug, Default)]
 pub struct JsonConfiguration {
     pretty: Option<bool>,
 }
 
 fn mavlink_page(req: HttpRequest) -> impl Responder {
-    let query = web::Query::<JsonConfiguration>::from_query(req.query_string());
+    let query = web::Query::<JsonConfiguration>::from_query(req.query_string())
+        .unwrap_or(web::Query(Default::default()));
 
     let url_path = req.path().to_string();
     let messages_ref = Arc::clone(&MESSAGES);
-    let message = messages_ref.lock().unwrap();
-    let final_result = (*message).pointer(&url_path);
-
-    if query.is_err() {
-        println!("Problem with query: {:#?}", query);
-    }
+    let message = messages_ref.lock().unwrap().clone();
+    let final_result = message.pointer(&url_path);
 
     if final_result.is_none() {
         return "No valid path".to_string();
     }
 
-    if query.is_err() || query.unwrap().pretty.unwrap() != true {
-        return serde_json::to_string(final_result.unwrap())
+    if !query.pretty.is_none() && query.pretty.unwrap() {
+        return serde_json::to_string_pretty(final_result.unwrap())
             .unwrap()
             .to_string();
     }
 
-    return serde_json::to_string_pretty(final_result.unwrap())
+    return serde_json::to_string(final_result.unwrap())
         .unwrap()
         .to_string();
 }
