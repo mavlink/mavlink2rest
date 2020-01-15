@@ -134,14 +134,32 @@ fn main() {
 }
 
 fn root_page(_req: HttpRequest) -> impl Responder {
+    let messages_ref = Arc::clone(&MESSAGES);
+    let message = messages_ref.lock().unwrap().clone();
+    let mut html_list_content = String::new();
+    for key in message["mavlink"].as_object().unwrap().keys() {
+        html_list_content = format!(
+            "{0} <li> <a href=\"mavlink/{1}\">mavlink/{1}</a> ({2:.2}Hz) </li>",
+            html_list_content,
+            key,
+            message["mavlink"][&key]["message_information"]["frequency"].as_f64().unwrap_or(0.0),
+        );
+    }
+    let html_list = format!("<ul> {} </ul>", html_list_content);
+
     let html = format!(
         "{} - {} - {}<br>By: {}<br>
         Check the <a href=\"\\mavlink\">mavlink path</a> for the data<br>
-        You can also check nested paths: <a href=\"mavlink/HEARTBEAT/mavtype/type\">mavlink/HEARTBEAT/mavtype/type</a>",
+        You can also check nested paths: <a href=\"mavlink/HEARTBEAT/mavtype/type\">mavlink/HEARTBEAT/mavtype/type</a><br>
+        <br>
+        List of available paths:
+        {}
+        ",
         env!("CARGO_PKG_NAME"),
         env!("VERGEN_SEMVER"),
         env!("VERGEN_BUILD_DATE"),
         env!("CARGO_PKG_AUTHORS"),
+        html_list,
     );
     HttpResponse::build(StatusCode::OK)
         .content_type("text/html; charset=utf-8")
