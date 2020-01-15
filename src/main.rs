@@ -4,6 +4,8 @@ use std::time::Duration;
 
 use actix_web::http::StatusCode;
 use actix_web::{web, App, HttpRequest, HttpResponse, HttpServer, Responder};
+use chrono;
+use chrono::offset::TimeZone;
 use clap;
 use serde_derive::Deserialize;
 use serde_json::json;
@@ -137,12 +139,25 @@ fn root_page(_req: HttpRequest) -> impl Responder {
     let messages_ref = Arc::clone(&MESSAGES);
     let message = messages_ref.lock().unwrap().clone();
     let mut html_list_content = String::new();
+    let now = chrono::Local::now();
     for key in message["mavlink"].as_object().unwrap().keys() {
+        let frequency = message["mavlink"][&key]["message_information"]["frequency"]
+            .as_f64()
+            .unwrap_or(0.0);
+        let last_time = now
+            - chrono::Local
+                .datetime_from_str(
+                    &message["mavlink"][&key]["message_information"]["time"]["last_message"]
+                        .to_string(),
+                    "\"%+\"",
+                )
+                .unwrap_or(now);
         html_list_content = format!(
-            "{0} <li> <a href=\"mavlink/{1}\">mavlink/{1}</a> ({2:.2}Hz) </li>",
+            "{0} <li> <a href=\"mavlink/{1}\">mavlink/{1}</a> ({2:.2}Hz - last update {3:#?}s ago) </li>",
             html_list_content,
             key,
-            message["mavlink"][&key]["message_information"]["frequency"].as_f64().unwrap_or(0.0),
+            frequency,
+            last_time.num_milliseconds() as f64/1e3
         );
     }
     let html_list = format!("<ul> {} </ul>", html_list_content);
