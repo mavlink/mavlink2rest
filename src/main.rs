@@ -69,11 +69,10 @@ fn main() {
         let vehicle = vehicle.clone();
         move || loop {
             let res = vehicle.send_default(&heartbeat_message());
-            if res.is_ok() {
-                thread::sleep(Duration::from_secs(1));
-            } else {
+            if res.is_err() {
                 println!("Failed to send heartbeat");
             }
+            thread::sleep(Duration::from_secs(1));
         }
     });
 
