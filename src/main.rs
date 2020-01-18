@@ -135,18 +135,18 @@ fn main() {
 }
 
 fn root_page(_req: HttpRequest) -> impl Responder {
-    let messages_ref = Arc::clone(&MESSAGES);
-    let message = messages_ref.lock().unwrap().clone();
+    let messages = Arc::clone(&MESSAGES);
+    let messages = messages.lock().unwrap();
     let mut html_list_content = String::new();
     let now = chrono::Local::now();
-    for key in message["mavlink"].as_object().unwrap().keys() {
-        let frequency = message["mavlink"][&key]["message_information"]["frequency"]
+    for key in messages["mavlink"].as_object().unwrap().keys() {
+        let frequency = messages["mavlink"][&key]["message_information"]["frequency"]
             .as_f64()
             .unwrap_or(0.0);
         let last_time = now
             - chrono::Local
                 .datetime_from_str(
-                    &message["mavlink"][&key]["message_information"]["time"]["last_message"]
+                    &messages["mavlink"][&key]["message_information"]["time"]["last_message"]
                         .to_string(),
                     "\"%+\"",
                 )
@@ -159,6 +159,9 @@ fn root_page(_req: HttpRequest) -> impl Responder {
             last_time.num_milliseconds() as f64/1e3
         );
     }
+    // Remove guard after clone
+    std::mem::drop(messages);
+
     let html_list = format!("<ul> {} </ul>", html_list_content);
 
     let html = format!(
@@ -190,23 +193,24 @@ fn mavlink_page(req: HttpRequest) -> impl Responder {
         .unwrap_or(web::Query(Default::default()));
 
     let url_path = req.path().to_string();
-    let messages_ref = Arc::clone(&MESSAGES);
-    let message = messages_ref.lock().unwrap().clone();
-    let final_result = message.pointer(&url_path);
+    let messages = Arc::clone(&MESSAGES);
+    let messages = messages.lock().unwrap();
+    let final_result = (*messages).pointer(&url_path);
 
     if final_result.is_none() {
         return "No valid path".to_string();
     }
 
+    let final_result = final_result.unwrap().clone();
+    std::mem::drop(messages); // Remove guard after clone
+
     if !query.pretty.is_none() && query.pretty.unwrap() {
-        return serde_json::to_string_pretty(final_result.unwrap())
+        return serde_json::to_string_pretty(&final_result)
             .unwrap()
             .to_string();
     }
 
-    return serde_json::to_string(final_result.unwrap())
-        .unwrap()
-        .to_string();
+    return serde_json::to_string(&final_result).unwrap().to_string();
 }
 
 pub fn heartbeat_message() -> mavlink::common::MavMessage {
