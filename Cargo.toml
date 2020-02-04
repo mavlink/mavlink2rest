@@ -7,6 +7,10 @@ authors = ["Patrick José Pereira <patrickelectric@gmail.com>"]
 edition = "2018"
 path = "build.rs"
 
+documentation = "https://github.com/patrickelectric/mavlink2rest"
+homepage = "https://github.com/patrickelectric/mavlink2rest"
+repository = "https://github.com/patrickelectric/mavlink2rest"
+
 [[bin]]
 bench = false
 path = "src/main.rs"
