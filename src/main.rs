@@ -24,7 +24,7 @@ lazy_static! {
 fn main() {
     let matches = clap::App::new(env!("CARGO_PKG_NAME"))
         .version(env!("CARGO_PKG_VERSION"))
-        .about("MAVLink to REST API!.")
+        .about("MAVLink to REST API!")
         .author(env!("CARGO_PKG_AUTHORS"))
         .arg(
             clap::Arg::with_name("connect")
