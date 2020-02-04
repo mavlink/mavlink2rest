@@ -192,7 +192,11 @@ fn mavlink_page(req: HttpRequest) -> impl Responder {
     let query = web::Query::<JsonConfiguration>::from_query(req.query_string())
         .unwrap_or(web::Query(Default::default()));
 
-    let url_path = req.path().to_string();
+    let mut url_path = req.path().to_string();
+    if url_path.ends_with("/") {
+        url_path.pop();
+    }
+
     let messages = Arc::clone(&MESSAGES);
     let messages = messages.lock().unwrap();
     let final_result = (*messages).pointer(&url_path);
