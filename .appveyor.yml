@@ -31,6 +31,8 @@ artifacts:
     name: '%PROJECT_NAME%-%TARGET%'
 
 deploy:
+  on:
+    branch: master
   tag: $(RELEASE_NAME)
   release: $(RELEASE_NAME)
   # All the zipped artifacts will be deployed
