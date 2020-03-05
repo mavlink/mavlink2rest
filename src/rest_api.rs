@@ -87,16 +87,21 @@ impl API {
         let final_result = (*messages).pointer(&url_path);
 
         if final_result.is_none() {
-            return "No valid path".to_string();
+            return HttpResponse::NotFound()
+                .content_type("text/plain")
+                .body(format!("No valid path: {}", &url_path));
         }
 
         let final_result = final_result.unwrap().clone();
         std::mem::drop(messages); // Remove guard after clone
 
         if query.pretty.is_some() && query.pretty.unwrap() {
-            return serde_json::to_string_pretty(&final_result).unwrap();
+            return HttpResponse::Ok()
+                .content_type("application/json")
+                .body(serde_json::to_string_pretty(&final_result).unwrap());
         }
-
-        return serde_json::to_string(&final_result).unwrap();
+        return HttpResponse::Ok()
+            .content_type("application/json")
+            .body(serde_json::to_string(&final_result).unwrap());
     }
 }
