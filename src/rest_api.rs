@@ -105,6 +105,47 @@ impl API {
             .body(serde_json::to_string(&final_result).unwrap());
     }
 
+    pub fn mavlink_helper_page(&self, req: HttpRequest) -> impl Responder {
+        let query = web::Query::<JsonConfiguration>::from_query(req.query_string())
+            .unwrap_or_else(|_| web::Query(Default::default()));
+
+        let url_path = req.path().to_string();
+        let message_name = url_path.split('/').last();
+
+        let result = match message_name {
+            Some(message_name) => match mavlink::common::MavMessage::message_id_from_name(message_name) {
+                Ok(name) => mavlink::common::MavMessage::default_message_from_id(name),
+                Err(error) => Err(error),
+            },
+            _ => Err("Path should contain a valid name."),
+        };
+
+        match result {
+            Ok(result) => {
+                if query.pretty.is_some() && query.pretty.unwrap() {
+                    return HttpResponse::Ok()
+                        .content_type("application/json")
+                        .body(serde_json::to_string_pretty(&result).unwrap());
+                }
+
+                return HttpResponse::Ok()
+                        .content_type("application/json")
+                        .body(serde_json::to_string(&result).unwrap());
+            }
+            Err(content) => {
+                if query.pretty.is_some() && query.pretty.unwrap() {
+                    return HttpResponse::NotFound()
+                        .content_type("application/json")
+                        .body(serde_json::to_string_pretty(&content).unwrap());
+                }
+
+                return HttpResponse::NotFound()
+                        .content_type("application/json")
+                        .body(serde_json::to_string(&content).unwrap());
+            }
+        }
+    }
+
     pub fn mavlink_post(&mut self, req: web::Json<MavlinkMessage>) -> MavlinkMessage {
         req.into_inner()
     }
