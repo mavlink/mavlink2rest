@@ -104,4 +104,8 @@ impl API {
             .content_type("application/json")
             .body(serde_json::to_string(&final_result).unwrap());
     }
+
+    pub fn mavlink_post(&mut self, req: web::Json<MavlinkMessage>) -> MavlinkMessage {
+        req.into_inner()
+    }
 }
