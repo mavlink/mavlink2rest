@@ -51,15 +51,18 @@ fn main() {
     vehicle.run();
 
     let inner_vehicle = Arc::clone(&vehicle.inner);
-    let inner_vehicle = inner_vehicle.lock().unwrap();
-    let api = Arc::new(Mutex::new(API::new(Arc::clone(&inner_vehicle.messages))));
+    let inner_vehicle_message = inner_vehicle.lock().unwrap();
+    let api = Arc::new(Mutex::new(API::new(Arc::clone(&inner_vehicle_message.messages))));
 
     println!("MAVLink connection string: {}", connection_string);
     println!("REST API address: {}", server_string);
 
+    let inner_vehicle = Arc::clone(&vehicle.inner);
     HttpServer::new(move || {
+        let inner_vehicle = inner_vehicle.clone();
         let cloned_api_root = api.clone();
         let cloned_api_get_mavlink = api.clone();
+        let cloned_api_post_mavlink = api.clone();
         App::new()
             .route(
                 "/",
@@ -73,6 +76,15 @@ fn main() {
                 web::get().to(move |x| {
                     let api = cloned_api_get_mavlink.lock().unwrap();
                     api.mavlink_page(x)
+                }),
+            )
+            .route(
+                "/mavlink",
+                web::post().to(move |x| {
+                    let inner_vehicle = inner_vehicle.lock().unwrap();
+                    let mut api = cloned_api_post_mavlink.lock().unwrap();
+                    let content = api.mavlink_post(x);
+                    inner_vehicle.channel.send(&content.header, &content.message)
                 }),
             )
     })
