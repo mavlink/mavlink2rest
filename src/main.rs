@@ -63,6 +63,7 @@ fn main() {
         let cloned_api_root = api.clone();
         let cloned_api_get_mavlink = api.clone();
         let cloned_api_post_mavlink = api.clone();
+        let cloned_api_helper_page = api.clone();
         App::new()
             .route(
                 "/",
@@ -76,6 +77,13 @@ fn main() {
                 web::get().to(move |x| {
                     let api = cloned_api_get_mavlink.lock().unwrap();
                     api.mavlink_page(x)
+                }),
+            )
+            .route(
+                "/helper/message/*",
+                web::get().to(move |x| {
+                    let api = cloned_api_helper_page.lock().unwrap();
+                    api.mavlink_helper_page(x)
                 }),
             )
             .route(
