@@ -8,7 +8,7 @@ use crate::message_information::MessageInformation;
 
 // TODO: Break this in shared and not mutex shared variables
 pub struct InnerVehicle {
-    channel:
+    pub channel:
         Arc<Box<(dyn mavlink::MavConnection + std::marker::Send + std::marker::Sync + 'static)>>,
     pub messages: Arc<Mutex<serde_json::value::Value>>,
     verbose: Arc<bool>,
