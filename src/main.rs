@@ -57,7 +57,10 @@ fn main() {
     println!("MAVLink connection string: {}", connection_string);
     println!("REST API address: {}", server_string);
 
+    // Remove guard after clone
+    std::mem::drop(inner_vehicle_message);
     let inner_vehicle = Arc::clone(&vehicle.inner);
+
     HttpServer::new(move || {
         let inner_vehicle = inner_vehicle.clone();
         let cloned_api_root = api.clone();
