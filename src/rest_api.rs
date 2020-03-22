@@ -6,6 +6,8 @@ use chrono::offset::TimeZone;
 use actix_web::http::StatusCode;
 use actix_web::{web, HttpRequest, HttpResponse, Responder};
 
+use mavlink::Message;
+
 use serde_derive::Deserialize;
 
 #[derive(Debug, Deserialize)]
@@ -112,9 +114,9 @@ impl API {
         let url_path = req.path().to_string();
         let message_name = url_path.split('/').last();
 
-        let result = match message_name {
+        let result: Result<mavlink::common::MavMessage, &'static str> = match message_name {
             Some(message_name) => match mavlink::common::MavMessage::message_id_from_name(message_name) {
-                Ok(name) => mavlink::common::MavMessage::default_message_from_id(name),
+                Ok(name) => mavlink::Message::default_message_from_id(name),
                 Err(error) => Err(error),
             },
             _ => Err("Path should contain a valid name."),
