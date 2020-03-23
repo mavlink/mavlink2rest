@@ -1,6 +1,6 @@
 [package]
 name = "mavlink2rest"
-version = "0.4.3"
+version = "0.5.0"
 description = "A simple REST API for MAVLink"
 license = "MIT"
 authors = ["Patrick José Pereira <patrickelectric@gmail.com>"]
