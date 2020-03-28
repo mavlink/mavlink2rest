@@ -32,7 +32,7 @@
     * For more information about the MAVLink message definition: https://mavlink.io/en/guide/serialization.html
     * **header**: Is the mavlink header definition with `system_id`, `component_id` and `sequence`.
     * **message**: A valid mavlink [message](https://mavlink.io/en/messages/common.html), for more information check `GET /helper/message/*`.
-    ```json
+    ```js
     {
         "header": { // MAVLink message header
             "system_id": 1, // System ID
@@ -54,7 +54,7 @@
     ```
   * `GET /helper/message/MAVLINK_MESSAGE_NAME`: Helper endpoint to create JSON compatible MAVLink messages, where `MAVLINK_MESSAGE_NAME` is the mavlink message name. E.g:
     * http://0.0.0.0:8088/helper/message/COMMAND_LONG
-      ```json
+      ```js
       {
           "type": "COMMAND_LONG",
           "param1": 0.0,
