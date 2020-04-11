@@ -115,10 +115,12 @@ impl API {
         let message_name = url_path.split('/').last();
 
         let result: Result<mavlink::common::MavMessage, &'static str> = match message_name {
-            Some(message_name) => match mavlink::common::MavMessage::message_id_from_name(message_name) {
-                Ok(name) => mavlink::Message::default_message_from_id(name),
-                Err(error) => Err(error),
-            },
+            Some(message_name) => {
+                match mavlink::common::MavMessage::message_id_from_name(message_name) {
+                    Ok(name) => mavlink::Message::default_message_from_id(name),
+                    Err(error) => Err(error),
+                }
+            }
             _ => Err("Path should contain a valid name."),
         };
 
@@ -131,8 +133,8 @@ impl API {
                 }
 
                 return HttpResponse::Ok()
-                        .content_type("application/json")
-                        .body(serde_json::to_string(&result).unwrap());
+                    .content_type("application/json")
+                    .body(serde_json::to_string(&result).unwrap());
             }
             Err(content) => {
                 if query.pretty.is_some() && query.pretty.unwrap() {
@@ -142,8 +144,8 @@ impl API {
                 }
 
                 return HttpResponse::NotFound()
-                        .content_type("application/json")
-                        .body(serde_json::to_string(&content).unwrap());
+                    .content_type("application/json")
+                    .body(serde_json::to_string(&content).unwrap());
             }
         }
     }

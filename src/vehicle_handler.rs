@@ -8,8 +8,14 @@ use crate::message_information::MessageInformation;
 
 // TODO: Break this in shared and not mutex shared variables
 pub struct InnerVehicle {
-    pub channel:
-        Arc<Box<(dyn mavlink::MavConnection<mavlink::common::MavMessage> + std::marker::Send + std::marker::Sync + 'static)>>,
+    pub channel: Arc<
+        Box<
+            (dyn mavlink::MavConnection<mavlink::common::MavMessage>
+                 + std::marker::Send
+                 + std::marker::Sync
+                 + 'static),
+        >,
+    >,
     pub messages: Arc<Mutex<serde_json::value::Value>>,
     verbose: Arc<bool>,
 }
@@ -20,8 +26,13 @@ pub struct Vehicle {
 
 impl Vehicle {
     // Move arguments to struct
-    pub fn new(connection_string: &str, mavlink_version: mavlink::MavlinkVersion, verbose: bool) -> Vehicle {
-        let mut mavlink_communication = mavlink::connect(connection_string).expect("Unable to connect!");
+    pub fn new(
+        connection_string: &str,
+        mavlink_version: mavlink::MavlinkVersion,
+        verbose: bool,
+    ) -> Vehicle {
+        let mut mavlink_communication =
+            mavlink::connect(connection_string).expect("Unable to connect!");
         mavlink_communication.set_protocol_version(mavlink_version);
         Vehicle {
             inner: Arc::new(Mutex::new(InnerVehicle {

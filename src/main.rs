@@ -59,7 +59,7 @@ fn main() {
     let mavlink_version = match mavlink_version {
         "1" => mavlink::MavlinkVersion::V1,
         "2" => mavlink::MavlinkVersion::V2,
-        _ => panic!("Invalid mavlink version")
+        _ => panic!("Invalid mavlink version"),
     };
 
     let mut vehicle = Vehicle::new(connection_string, mavlink_version, verbose);
@@ -67,7 +67,9 @@ fn main() {
 
     let inner_vehicle = Arc::clone(&vehicle.inner);
     let inner_vehicle_message = inner_vehicle.lock().unwrap();
-    let api = Arc::new(Mutex::new(API::new(Arc::clone(&inner_vehicle_message.messages))));
+    let api = Arc::new(Mutex::new(API::new(Arc::clone(
+        &inner_vehicle_message.messages,
+    ))));
 
     println!("MAVLink connection string: {}", connection_string);
     println!("REST API address: {}", server_string);
@@ -110,7 +112,9 @@ fn main() {
                     let inner_vehicle = inner_vehicle.lock().unwrap();
                     let mut api = cloned_api_post_mavlink.lock().unwrap();
                     let content = api.mavlink_post(x);
-                    inner_vehicle.channel.send(&content.header, &content.message)
+                    inner_vehicle
+                        .channel
+                        .send(&content.header, &content.message)
                 }),
             )
     })
