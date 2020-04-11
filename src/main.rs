@@ -35,6 +35,14 @@ fn main() {
                 .default_value("0.0.0.0:8088"),
         )
         .arg(
+            clap::Arg::with_name("mavlink")
+                .long("mavlink")
+                .value_name("VERSION")
+                .help("Sets the mavlink version used to communicate")
+                .takes_value(true)
+                .default_value("2"),
+        )
+        .arg(
             clap::Arg::with_name("verbose")
                 .short("v")
                 .long("verbose")
@@ -44,10 +52,17 @@ fn main() {
         .get_matches();
 
     let verbose = matches.is_present("verbose");
+    let mavlink_version = matches.value_of("mavlink").unwrap();
     let server_string = matches.value_of("server").unwrap();
     let connection_string = matches.value_of("connect").unwrap();
 
-    let mut vehicle = Vehicle::new(connection_string, verbose);
+    let mavlink_version = match mavlink_version {
+        "1" => mavlink::MavlinkVersion::V1,
+        "2" => mavlink::MavlinkVersion::V2,
+        _ => panic!("Invalid mavlink version")
+    };
+
+    let mut vehicle = Vehicle::new(connection_string, mavlink_version, verbose);
     vehicle.run();
 
     let inner_vehicle = Arc::clone(&vehicle.inner);

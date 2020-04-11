@@ -20,8 +20,9 @@ pub struct Vehicle {
 
 impl Vehicle {
     // Move arguments to struct
-    pub fn new(connection_string: &str, verbose: bool) -> Vehicle {
-        let mavlink_communication = mavlink::connect(connection_string).unwrap();
+    pub fn new(connection_string: &str, mavlink_version: mavlink::MavlinkVersion, verbose: bool) -> Vehicle {
+        let mut mavlink_communication = mavlink::connect(connection_string).expect("Unable to connect!");
+        mavlink_communication.set_protocol_version(mavlink_version);
         Vehicle {
             inner: Arc::new(Mutex::new(InnerVehicle {
                 channel: Arc::new(mavlink_communication),
