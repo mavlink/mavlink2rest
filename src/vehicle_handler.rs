@@ -95,17 +95,7 @@ impl InnerVehicle {
                         serde_json::to_value(messages_information[&msg_type]).unwrap();
                 }
                 Err(e) => {
-                    match e.kind() {
-                        std::io::ErrorKind::WouldBlock => {
-                            //no messages currently available to receive -- wait a while
-                            thread::sleep(Duration::from_secs(1));
-                            continue;
-                        }
-                        _ => {
-                            println!("recv error: {:?}", e);
-                            break;
-                        }
-                    }
+                    println!("recv error: {:?}", e);
                 }
             }
         });
