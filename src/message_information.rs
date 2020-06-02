@@ -9,7 +9,7 @@ struct Time {
 
 #[derive(Serialize, Debug, Copy, Clone)]
 pub struct MessageInformation {
-    counter: i64,
+    counter: u32,
     frequency: f32,
     time: Time,
 }
