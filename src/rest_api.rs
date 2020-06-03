@@ -8,9 +8,9 @@ use actix_web::{web, HttpRequest, HttpResponse, Responder};
 
 use mavlink::Message;
 
-use serde_derive::Deserialize;
+use serde_derive::{Deserialize, Serialize};
 
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Deserialize, Serialize)]
 pub struct MavlinkMessage {
     pub header: mavlink::MavHeader,
     pub message: mavlink::common::MavMessage,
@@ -126,6 +126,11 @@ impl API {
 
         match result {
             Ok(result) => {
+                let result = MavlinkMessage {
+                    header: mavlink::MavHeader::default(),
+                    message: result,
+                };
+
                 if query.pretty.is_some() && query.pretty.unwrap() {
                     return HttpResponse::Ok()
                         .content_type("application/json")
