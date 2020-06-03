@@ -67,20 +67,27 @@
     * http://0.0.0.0:8088/helper/message/COMMAND_LONG
       ```js
       {
-          "type": "COMMAND_LONG",
-          "param1": 0.0,
-          "param2": 0.0,
-          "param3": 0.0,
-          "param4": 0.0,
-          "param5": 0.0,
-          "param6": 0.0,
-          "param7": 0.0,
-          "command": {
-              "type": "MAV_CMD_NAV_WAYPOINT"
+          "header": {
+              "system_id": 255,
+              "component_id": 0,
+              "sequence": 0
           },
-          "target_system": 0,
-          "target_component": 0,
-          "confirmation": 0
+          "message": {
+              "type": "COMMAND_LONG",
+              "param1": 0.0,
+              "param2": 0.0,
+              "param3": 0.0,
+              "param4": 0.0,
+              "param5": 0.0,
+              "param6": 0.0,
+              "param7": 0.0,
+              "command": {
+                  "type": "MAV_CMD_NAV_WAYPOINT"
+              },
+              "target_system": 0,
+              "target_component": 0,
+              "confirmation": 0
+          }
       }
       ```
 
@@ -131,14 +138,21 @@
   ```
   ```js
   {
-    "type": "ATTITUDE",
-    "time_boot_ms": 0,
-    "roll": 0.0,
-    "pitch": 0.0,
-    "yaw": 0.0,
-    "rollspeed": 0.0,
-    "pitchspeed": 0.0,
-    "yawspeed": 0.0
+    "header": {
+      "system_id": 255,
+      "component_id": 0,
+      "sequence": 0
+    },
+    "message": {
+      "type": "ATTITUDE",
+      "time_boot_ms": 0,
+      "roll": 0.0,
+      "pitch": 0.0,
+      "yaw": 0.0,
+      "rollspeed": 0.0,
+      "pitchspeed": 0.0,
+      "yawspeed": 0.0
+    }
   }
   ```
 
