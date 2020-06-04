@@ -69,7 +69,7 @@ impl API {
             {}
             ",
             env!("CARGO_PKG_NAME"),
-            env!("VERGEN_SEMVER"),
+            env!("CARGO_PKG_VERSION"),
             env!("VERGEN_BUILD_DATE"),
             env!("CARGO_PKG_AUTHORS"),
             html_list,
