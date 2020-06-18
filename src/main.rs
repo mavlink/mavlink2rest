@@ -1,5 +1,6 @@
 use std::sync::{Arc, Mutex};
 
+use actix_cors::Cors;
 use actix_web::{web, App, HttpServer};
 use clap;
 
@@ -85,6 +86,7 @@ fn main() {
         let cloned_api_post_mavlink = api.clone();
         let cloned_api_helper_page = api.clone();
         App::new()
+            .wrap(Cors::default())
             .route(
                 "/",
                 web::get().to(move || {
