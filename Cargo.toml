@@ -24,7 +24,7 @@ actix-cors = "0.1"
 actix-web = "1.0.8"
 chrono = { version = "0.4", features = ["serde"] }
 clap = "2.31.2"
-mavlink = "0.8.3"
+mavlink = { git = "https://github.com/patrickelectric/rust-mavlink", branch = "fix_mavlink2", features = [ "emit-extensions" ]}
 serde = "1.0.101"
 serde_json = "1.0.41"
 serde_derive = "1.0.104"
