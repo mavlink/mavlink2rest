@@ -48,7 +48,7 @@ impl API {
                     )
                     .unwrap_or(now);
             html_list_content = format!(
-                "{0} <li> <a href=\"mavlink/{1}\">mavlink/{1}</a> ({2:.2}Hz - last update {3:#?}s ago) </li>",
+                "{0} <li> <a href=\"mavlink/{1}?pretty=true\">mavlink/{1}</a> ({2:.2}Hz - last update {3:#?}s ago) </li>",
                 html_list_content,
                 key,
                 frequency,
