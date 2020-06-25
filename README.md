@@ -6,6 +6,8 @@
 
 `mavlink2rest` creates a REST server that provides mavlink information from a mavlink source.
 
+The current version supports the **ardupilotmega** dialect, that includes **common**, **icarous** and **uavionix**.
+
 ## Install :zap:
 - :gear: Cargo Install: `cargo install mavlink2rest`
 
