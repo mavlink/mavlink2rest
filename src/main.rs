@@ -1,7 +1,7 @@
 use std::sync::{Arc, Mutex};
 
 use actix_cors::Cors;
-use actix_web::{web, App, HttpServer};
+use actix_web::{web, App, HttpResponse, HttpServer};
 use clap;
 
 mod message_information;
@@ -114,9 +114,28 @@ fn main() {
                     let inner_vehicle = inner_vehicle.lock().unwrap();
                     let mut api = cloned_api_post_mavlink.lock().unwrap();
                     let content = api.mavlink_post(x);
-                    inner_vehicle
-                        .channel
-                        .send(&content.header, &content.message)
+                    if content.is_err() {
+                        return HttpResponse::NotFound()
+                            .content_type("text/plain")
+                            .body(format!(
+                                "Error: {}",
+                                content.err().unwrap().into_inner().unwrap()
+                            ));
+                    }
+                    let msg = content.unwrap();
+                    let result = inner_vehicle.channel.send(&msg.header, &msg.message);
+                    if result.is_err() {
+                        return HttpResponse::NotFound()
+                            .content_type("text/plain")
+                            .body(format!(
+                                "Error: {:#?}",
+                                result.err().unwrap().into_inner().unwrap()
+                            ));
+                    }
+
+                    return HttpResponse::Ok()
+                        .content_type("text/plain")
+                        .body(format!("{:#?}", result.ok().unwrap()));
                 }),
             )
     })

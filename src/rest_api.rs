@@ -13,6 +13,12 @@ use serde_derive::{Deserialize, Serialize};
 #[derive(Debug, Deserialize, Serialize)]
 pub struct MavlinkMessage {
     pub header: mavlink::MavHeader,
+    pub message: mavlink::ardupilotmega::MavMessage,
+}
+
+#[derive(Debug, Deserialize, Serialize)]
+pub struct MavlinkMessageCommon {
+    pub header: mavlink::MavHeader,
     pub message: mavlink::common::MavMessage,
 }
 
@@ -114,9 +120,9 @@ impl API {
         let url_path = req.path().to_string();
         let message_name = url_path.split('/').last();
 
-        let result: Result<mavlink::common::MavMessage, &'static str> = match message_name {
+        let result: Result<mavlink::ardupilotmega::MavMessage, &'static str> = match message_name {
             Some(message_name) => {
-                match mavlink::common::MavMessage::message_id_from_name(message_name) {
+                match mavlink::ardupilotmega::MavMessage::message_id_from_name(message_name) {
                     Ok(name) => mavlink::Message::default_message_from_id(name),
                     Err(error) => Err(error),
                 }
@@ -155,7 +161,43 @@ impl API {
         }
     }
 
-    pub fn mavlink_post(&mut self, req: web::Json<MavlinkMessage>) -> MavlinkMessage {
-        req.into_inner()
+    pub fn mavlink_post(&mut self, bytes: web::Bytes) -> Result<MavlinkMessage, std::io::Error> {
+        let json_string = String::from_utf8(bytes.to_vec());
+        if json_string.is_err() {
+            return Err(std::io::Error::new(
+                std::io::ErrorKind::Other,
+                "Failed to parse input as UTF-8 string.",
+            ));
+        }
+        let json_string = json_string.unwrap();
+
+        let result = serde_json::from_str::<MavlinkMessageCommon>(&json_string);
+        if result.is_ok() {
+            let msg = result.unwrap();
+            return Ok(MavlinkMessage {
+                header: msg.header,
+                message: mavlink::ardupilotmega::MavMessage::common(msg.message),
+            });
+        }
+        let mut errors = Vec::new();
+        errors.push(format!(
+            "Failed to parse common message: {:#?}",
+            result.err().unwrap()
+        ));
+
+        let result = serde_json::from_str::<MavlinkMessage>(&json_string);
+        if result.is_ok() {
+            return Ok(result.unwrap());
+        }
+        errors.push(format!(
+            "Failed to parse ardupilotmega message: {:#?}",
+            result.err().unwrap()
+        ));
+
+        let error = format!("{:?}", &errors);
+        return Err(std::io::Error::new(
+            std::io::ErrorKind::Other,
+            error.as_str(),
+        ));
     }
 }
