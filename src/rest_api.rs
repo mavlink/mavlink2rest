@@ -85,6 +85,18 @@ impl API {
             .body(html)
     }
 
+    pub fn parse_query<T: serde::ser::Serialize>(
+        message: &T,
+        query: &web::Query<JsonConfiguration>,
+    ) -> String {
+        let error_message =
+            "Not possible to parse mavlink message, please report this issue!".to_string();
+        if query.pretty.is_some() && query.pretty.unwrap() {
+            return serde_json::to_string_pretty(&message).unwrap_or(error_message);
+        }
+        return serde_json::to_string(&message).unwrap_or(error_message);
+    }
+
     pub fn mavlink_page(&self, req: HttpRequest) -> impl Responder {
         let query = web::Query::<JsonConfiguration>::from_query(req.query_string())
             .unwrap_or_else(|_| web::Query(Default::default()));
@@ -103,14 +115,9 @@ impl API {
         let final_result = final_result.unwrap().clone();
         std::mem::drop(messages); // Remove guard after clone
 
-        if query.pretty.is_some() && query.pretty.unwrap() {
-            return HttpResponse::Ok()
-                .content_type("application/json")
-                .body(serde_json::to_string_pretty(&final_result).unwrap());
-        }
         return HttpResponse::Ok()
             .content_type("application/json")
-            .body(serde_json::to_string(&final_result).unwrap());
+            .body(API::parse_query(&final_result, &query));
     }
 
     pub fn mavlink_helper_page(&self, req: HttpRequest) -> impl Responder {
@@ -132,31 +139,33 @@ impl API {
 
         match result {
             Ok(result) => {
-                let result = MavlinkMessage {
-                    header: mavlink::MavHeader::default(),
-                    message: result,
+                match result {
+                    mavlink::ardupilotmega::MavMessage::common(msg) => {
+                        let result = MavlinkMessageCommon {
+                            header: mavlink::MavHeader::default(),
+                            message: msg,
+                        };
+
+                        return HttpResponse::Ok()
+                            .content_type("application/json")
+                            .body(API::parse_query(&result, &query));
+                    }
+                    msg => {
+                        let result = MavlinkMessage {
+                            header: mavlink::MavHeader::default(),
+                            message: msg,
+                        };
+
+                        return HttpResponse::Ok()
+                            .content_type("application/json")
+                            .body(API::parse_query(&result, &query));
+                    }
                 };
-
-                if query.pretty.is_some() && query.pretty.unwrap() {
-                    return HttpResponse::Ok()
-                        .content_type("application/json")
-                        .body(serde_json::to_string_pretty(&result).unwrap());
-                }
-
-                return HttpResponse::Ok()
-                    .content_type("application/json")
-                    .body(serde_json::to_string(&result).unwrap());
             }
             Err(content) => {
-                if query.pretty.is_some() && query.pretty.unwrap() {
-                    return HttpResponse::NotFound()
-                        .content_type("application/json")
-                        .body(serde_json::to_string_pretty(&content).unwrap());
-                }
-
                 return HttpResponse::NotFound()
                     .content_type("application/json")
-                    .body(serde_json::to_string(&content).unwrap());
+                    .body(API::parse_query(&content, &query));
             }
         }
     }
