@@ -27,10 +27,10 @@ The current version supports the **ardupilotmega** dialect, that includes **comm
 ### API
 * MAVLink JSON:
   * `GET /mavlink|/mavlink/*`. The output is a JSON that you get each nested key individually, E.g:
-    * http://0.0.0.0:8088/mavlink/ATTITUDE/
+    * http://0.0.0.0:8088/mavlink/ATTITUDE
     * http://0.0.0.0:8088/mavlink/ATTITUDE/roll
     * http://0.0.0.0:8088/mavlink/ATTITUDE/message_information/time/last_message
-      * Any MAVLink message will contain a normal message definition, as described in `GET /helper/message/*`, and a **message_information** structure defined as:
+      * Any MAVLink message will contain a normal message definition, as described in `GET /helper/message/<MESSAGE_NAME>`, and a **message_information** structure defined as:
           ```js
           "message_information": {
               "counter": 0, // Number of messages received
@@ -44,27 +44,9 @@ The current version supports the **ardupilotmega** dialect, that includes **comm
   * `POST /mavlink`. Sends the message to a specific vehicle.
     * For more information about the MAVLink message definition: https://mavlink.io/en/guide/serialization.html
     * **header**: Is the mavlink header definition with `system_id`, `component_id` and `sequence`.
-    * **message**: A valid mavlink [message](https://mavlink.io/en/messages/common.html), for more information check `GET /helper/message/*`.
-    ```js
-    {
-        "header": { // MAVLink message header
-            "system_id": 1, // System ID
-            "component_id": 1, // Component ID
-            "sequence": 0 // Message sequence
-        },
-        "message": { // MAVLink message payload
-            "type":"COMMAND_LONG",
-            "param1":0.0,
-            "param2":0.0,"param3":0.0,"param4":0.0,"param5":0.0,"param6":0.0,"param7":0.0,
-            "command":{
-            "type":"MAV_CMD_COMPONENT_ARM_DISARM"
-            },
-            "target_system":0,
-            "target_component":0,
-            "confirmation":0
-        }
-    }
-    ```
+    * **message**: A valid mavlink [message](https://mavlink.io/en/messages/common.html), for more information check `GET /helper/message/<MESSAGE_NAME>`.
+      * Check [ARM/DISARM example](https://github.com/patrickelectric/mavlink2rest#examples).
+
   * `GET /helper/message/MAVLINK_MESSAGE_NAME`: Helper endpoint to create JSON compatible MAVLink messages, where `MAVLINK_MESSAGE_NAME` is the mavlink message name. E.g:
     * http://0.0.0.0:8088/helper/message/COMMAND_LONG
       ```js
@@ -84,7 +66,7 @@ The current version supports the **ardupilotmega** dialect, that includes **comm
               "param6": 0.0,
               "param7": 0.0,
               "command": {
-                  "type": "MAV_CMD_NAV_WAYPOINT"
+                  "type": "MAV_CMD_NAV_WAYPOINT" // Random value
               },
               "target_system": 0,
               "target_component": 0,
@@ -95,13 +77,13 @@ The current version supports the **ardupilotmega** dialect, that includes **comm
 
 #### Examples
 
-* Get all messages:
+##### Get all messages:
   ```sh
   curl --request GET http://0.0.0.0:8088/mavlink\?pretty\=true
   # The output is huge, you can get it here: https://gist.github.com/patrickelectric/26a407c4e7749cdaa58d06b52212cb1e
   ```
 
-* Get attitude:
+##### Get attitude:
   ```sh
   curl --request GET http://0.0.0.0:8088/mavlink/ATTITUDE?pretty=true
   ```
@@ -126,7 +108,7 @@ The current version supports the **ardupilotmega** dialect, that includes **comm
   }
   ````
 
-* Get time of last *ATTITUDE* message
+##### Get time of last *ATTITUDE* message:
   ```sh
   curl --request GET http://0.0.0.0:8088/mavlink/ATTITUDE/message_information/time/last_message?pretty=true
   ```
@@ -134,7 +116,7 @@ The current version supports the **ardupilotmega** dialect, that includes **comm
   "2020-03-28T14:28:51.577853-03:00"
   ```
 
-* Get a message structure example
+##### Get a message structure example:
   ```sh
   curl --request GET http://0.0.0.0:8088/helper/message/ATTITUDE\?pretty\=true
   ```
@@ -158,7 +140,7 @@ The current version supports the **ardupilotmega** dialect, that includes **comm
   }
   ```
 
-* Request vehicle to be [armed](https://mavlink.io/en/messages/common.html#MAV_CMD_COMPONENT_ARM_DISARM)
+##### Request vehicle to be [armed](https://mavlink.io/en/messages/common.html#MAV_CMD_COMPONENT_ARM_DISARM):
   ```sh
   # ARM: param1 is 1.0
   curl --request POST http://0.0.0.0:8088/mavlink -H "Content-Type: application/json" --data \
@@ -182,7 +164,7 @@ The current version supports the **ardupilotmega** dialect, that includes **comm
   }'
   ```
 
-* Request vehicle to be [disarmed](https://mavlink.io/en/messages/common.html#MAV_CMD_COMPONENT_ARM_DISARM)
+##### Request vehicle to be [disarmed](https://mavlink.io/en/messages/common.html#MAV_CMD_COMPONENT_ARM_DISARM):
   ```sh
   # ARM: param1 is 0.0
   curl --request POST http://0.0.0.0:8088/mavlink -H "Content-Type: application/json" --data \
