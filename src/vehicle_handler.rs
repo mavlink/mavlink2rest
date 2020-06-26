@@ -94,8 +94,17 @@ impl InnerVehicle {
                     msgs["mavlink"][&msg_type]["message_information"] =
                         serde_json::to_value(messages_information[&msg_type]).unwrap();
                 }
-                Err(e) => {
-                    println!("recv error: {:?}", e);
+                Err(error) => {
+                    println!("recv error: {:?}", error);
+                    match error {
+                        mavlink::error::MessageReadError::Io(error) => {
+                            if error.kind() == std::io::ErrorKind::UnexpectedEof {
+                                // We're probably running a file, time to exit!
+                                std::process::exit(0);
+                            }
+                        }
+                        _ => {}
+                    }
                 }
             }
         });
