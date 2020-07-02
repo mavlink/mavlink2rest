@@ -11,6 +11,15 @@ matrix:
     - os: linux
       dist: xenial
       env:
+        - TARGET=arm-unknown-linux-musleabihf
+      addons:
+        apt:
+          packages:
+            - libudev-dev
+
+    - os: linux
+      dist: xenial
+      env:
         - TARGET=armv7-unknown-linux-musleabihf
       addons:
         apt:
