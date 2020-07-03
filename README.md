@@ -16,7 +16,8 @@ The current version supports the **ardupilotmega** dialect, that includes **comm
 - :computer: [**Windows**](https://github.com/patrickelectric/mavlink2rest/releases/download/continuous/mavlink2rest-i686-pc-windows-msvc.zip)
 - :apple: [**MacOS**](https://github.com/patrickelectric/mavlink2rest/releases/download/continuous/mavlink2rest-x86_64-apple-darwin)
 - :penguin: [**Linux**](https://github.com/patrickelectric/mavlink2rest/releases/download/continuous/mavlink2rest-x86_64-unknown-linux-musl)
-- :strawberry: [**Raspberry**](https://github.com/patrickelectric/mavlink2rest/releases/download/continuous/mavlink2rest-armv7-unknown-linux-musleabihf)
+- :strawberry: [**Raspberry**](https://github.com/patrickelectric/mavlink2rest/releases/download/continuous/mavlink2rest-arm-unknown-linux-musleabihf)
+  - ARMv6 binary, ARMv7 is also available under the project releases.
 
 ## Endpoints
 
