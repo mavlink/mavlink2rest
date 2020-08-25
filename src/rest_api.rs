@@ -67,7 +67,8 @@ impl API {
         let html_list = format!("<ul> {} </ul>", html_list_content);
 
         let html = format!(
-            "{} - {} - {}<br>By: {}<br>
+            "<meta http-equiv=\"refresh\" content=\"1\">
+            {} - {} - {}<br>By: {}<br>
             Check the <a href=\"\\mavlink\">mavlink path</a> for the data<br>
             You can also check nested paths: <a href=\"mavlink/HEARTBEAT/mavtype/type\">mavlink/HEARTBEAT/mavtype/type</a><br>
             <br>
