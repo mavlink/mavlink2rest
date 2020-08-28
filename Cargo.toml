@@ -24,11 +24,11 @@ actix-cors = "0.2.0"
 actix-rt = "1.1.1"
 actix-web = "2.0.0"
 chrono = { version = "0.4", features = ["serde"] }
-clap = "2.31.2"
+clap = "2.33.3"
 mavlink = { version = "0.8.5", features = [ "emit-extensions", "ardupilotmega"] }
-serde = "1.0.101"
-serde_json = "1.0.41"
-serde_derive = "1.0.104"
+serde = "1.0.115"
+serde_json = "1.0.57"
+serde_derive = "1.0.115"
 vergen = "3"
 
 [build-dependencies]
