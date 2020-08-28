@@ -1,18 +1,19 @@
 use std::sync::{Arc, Mutex};
 
 use actix_cors::Cors;
-use actix_web::{web, App, HttpResponse, HttpServer};
+use actix_web::{middleware, web, App, HttpResponse, HttpServer};
 use clap;
 
 mod message_information;
 
 mod vehicle_handler;
-use vehicle_handler::Vehicle;
+use vehicle_handler::{InnerVehicle, Vehicle};
 
 mod rest_api;
 use rest_api::API;
 
-fn main() {
+#[actix_rt::main]
+async fn main() -> std::io::Result<()> {
     let matches = clap::App::new(env!("CARGO_PKG_NAME"))
         .version(env!("CARGO_PKG_VERSION"))
         .about("MAVLink to REST API!")
@@ -80,67 +81,97 @@ fn main() {
     let inner_vehicle = Arc::clone(&vehicle.inner);
 
     HttpServer::new(move || {
-        let inner_vehicle = inner_vehicle.clone();
-        let cloned_api_root = api.clone();
-        let cloned_api_get_mavlink = api.clone();
-        let cloned_api_post_mavlink = api.clone();
-        let cloned_api_helper_page = api.clone();
+        let api = api.clone();
+        struct RestData {
+            api: Arc<Mutex<API>>,
+            vehicle: Arc<Mutex<InnerVehicle>>,
+        };
+
+        let data = RestData {
+            api: api.clone(),
+            vehicle: inner_vehicle.clone(),
+        };
         App::new()
             .wrap(Cors::default())
-            .route(
-                "/",
-                web::get().to(move || {
-                    let api = cloned_api_root.lock().unwrap();
-                    api.root_page()
-                }),
-            )
-            .route(
-                "/mavlink|/mavlink/*",
-                web::get().to(move |x| {
-                    let api = cloned_api_get_mavlink.lock().unwrap();
-                    api.mavlink_page(x)
-                }),
-            )
-            .route(
-                "/helper/message/*",
-                web::get().to(move |x| {
-                    let api = cloned_api_helper_page.lock().unwrap();
-                    api.mavlink_helper_page(x)
-                }),
-            )
-            .route(
-                "/mavlink",
-                web::post().to(move |x| {
-                    let inner_vehicle = inner_vehicle.lock().unwrap();
-                    let mut api = cloned_api_post_mavlink.lock().unwrap();
-                    let content = api.mavlink_post(x);
-                    if content.is_err() {
-                        return HttpResponse::NotFound()
-                            .content_type("text/plain")
-                            .body(format!(
-                                "Error: {}",
-                                content.err().unwrap().into_inner().unwrap()
-                            ));
-                    }
-                    let msg = content.unwrap();
-                    let result = inner_vehicle.channel.send(&msg.header, &msg.message);
-                    if result.is_err() {
-                        return HttpResponse::NotFound()
-                            .content_type("text/plain")
-                            .body(format!(
-                                "Error: {:#?}",
-                                result.err().unwrap().into_inner().unwrap()
-                            ));
-                    }
+            .wrap(middleware::NormalizePath)
+            .data(Arc::new(Mutex::new(data)))
+            .service(web::resource("/").route(web::get().to(
+                |data: web::Data<Arc<Mutex<RestData>>>| async move {
+                    let answer = data.lock().unwrap().api.lock().unwrap().root_page();
+                    return answer;
+                },
+            )))
+            .service(
+                // Needs https://github.com/actix/actix-web/pull/1639 to accept /mavlink/
+                web::scope("/mavlink")
+                    .route(
+                        "*",
+                        web::get().to(|data: web::Data<Arc<Mutex<RestData>>>, bytes| async move {
+                            let answer =
+                                data.lock().unwrap().api.lock().unwrap().mavlink_page(bytes);
+                            return answer;
+                        }),
+                    )
+                    .route(
+                        "",
+                        web::get().to(|data: web::Data<Arc<Mutex<RestData>>>, bytes| async move {
+                            let answer =
+                                data.lock().unwrap().api.lock().unwrap().mavlink_page(bytes);
+                            return answer;
+                        }),
+                    )
+                    .route(
+                        "",
+                        web::post().to(|data: web::Data<Arc<Mutex<RestData>>>, bytes| async move {
+                            let content =
+                                data.lock().unwrap().api.lock().unwrap().mavlink_post(bytes);
+                            if content.is_err() {
+                                return HttpResponse::NotFound().content_type("text/plain").body(
+                                    format!(
+                                        "Error: {}",
+                                        content.err().unwrap().into_inner().unwrap()
+                                    ),
+                                );
+                            }
+                            let msg = content.unwrap();
+                            let result = data
+                                .lock()
+                                .unwrap()
+                                .vehicle
+                                .lock()
+                                .unwrap()
+                                .channel
+                                .send(&msg.header, &msg.message);
+                            if result.is_err() {
+                                return HttpResponse::NotFound().content_type("text/plain").body(
+                                    format!(
+                                        "Error: {:#?}",
+                                        result.err().unwrap().into_inner().unwrap()
+                                    ),
+                                );
+                            }
 
-                    return HttpResponse::Ok()
-                        .content_type("text/plain")
-                        .body(format!("{:#?}", result.ok().unwrap()));
-                }),
+                            return HttpResponse::Ok()
+                                .content_type("text/plain")
+                                .body(format!("{:#?}", result.ok().unwrap()));
+                        }),
+                    ),
             )
+            .service(web::resource("/helper/message/*").route(web::get().to(
+                |data: web::Data<Arc<Mutex<RestData>>>, bytes| async move {
+                    let answer = data
+                        .lock()
+                        .unwrap()
+                        .api
+                        .lock()
+                        .unwrap()
+                        .mavlink_helper_page(bytes);
+                    return answer;
+                },
+            )))
     })
     .bind(server_string)
     .unwrap()
     .run()
-    .unwrap();
+    .await
 }

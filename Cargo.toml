@@ -20,8 +20,9 @@ name = "mavlink2rest"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-actix-cors = "0.1"
-actix-web = "1.0.8"
+actix-cors = "0.2.0"
+actix-rt = "1.1.1"
+actix-web = "2.0.0"
 chrono = { version = "0.4", features = ["serde"] }
 clap = "2.31.2"
 mavlink = { version = "0.8.5", features = [ "emit-extensions", "ardupilotmega"] }
