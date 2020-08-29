@@ -18,6 +18,7 @@ pub struct InnerVehicle {
     >,
     pub messages: Arc<Mutex<serde_json::value::Value>>,
     verbose: Arc<bool>,
+    pub new_message_callback: Option<Arc<dyn Fn(&serde_json::Value, &String) + Send + Sync>>,
 }
 
 pub struct Vehicle {
@@ -39,6 +40,7 @@ impl Vehicle {
                 channel: Arc::new(mavlink_communication),
                 messages: Arc::new(Mutex::new(json!({"mavlink":{}}))),
                 verbose: Arc::new(verbose),
+                new_message_callback: Default::default(),
             })),
         }
     }
@@ -68,6 +70,10 @@ impl InnerVehicle {
         let verbose = Arc::clone(&inner.verbose);
         let vehicle = inner.channel.clone();
         let messages_ref = Arc::clone(&inner.messages);
+        let callback = match &inner.new_message_callback {
+            Some(callback) => Some(Arc::clone(&callback)),
+            _ => None,
+        };
 
         let mut messages_information: std::collections::HashMap<
             std::string::String,
@@ -91,8 +97,13 @@ impl InnerVehicle {
                         .entry(msg_type.clone())
                         .or_insert_with(MessageInformation::default);
                     message_information.update();
+
                     msgs["mavlink"][&msg_type]["message_information"] =
                         serde_json::to_value(messages_information[&msg_type]).unwrap();
+
+                    if callback.is_some() {
+                        callback.as_ref().unwrap()(&msgs["mavlink"][&msg_type], &msg_type);
+                    }
                 }
                 Err(error) => {
                     println!("recv error: {:?}", error);
