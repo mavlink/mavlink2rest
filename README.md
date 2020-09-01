@@ -191,3 +191,64 @@ The current version supports the **ardupilotmega** dialect, that includes **comm
 
 > Note: For any invalid `GET`, you'll receive a 404 response with the error message.
 > Note: The endpoints that allow `GET` and provides a JSON output, also allow the usage of the query parameter `pretty` with a boolean value `true` or `false`, E.g: http://0.0.0.0:8088/helper/message/COMMAND_LONG?pretty=true
+
+### Websocket
+
+It's also possible to connect multiple websockets with the following path `/ws/mavlink`, the endpoint also accepts the query parameter `filter`, the filter value should be a regex that matches MAVLink message names, E.g: `/ws/mavlink?filter=RC_.*` will match **RC_CHANNELS_RAW** and **RC_CHANNELS**, resulting in the following output:
+  ```json
+  { // First message
+    "chan10_raw": 0,
+    "chan11_raw": 0,
+    "chan12_raw": 0,
+    "chan13_raw": 0,
+    "chan14_raw": 0,
+    "chan15_raw": 0,
+    "chan16_raw": 0,
+    "chan17_raw": 0,
+    "chan18_raw": 0,
+    "chan1_raw": 1500,
+    "chan2_raw": 1500,
+    "chan3_raw": 1500,
+    "chan4_raw": 1500,
+    "chan5_raw": 1500,
+    "chan6_raw": 1500,
+    "chan7_raw": 1500,
+    "chan8_raw": 1500,
+    "chan9_raw": 0,
+    "chancount": 16,
+    "message_information": {
+      "counter": 3732,
+      "frequency": 4.0,
+      "time": {
+        "first_message": "2020-09-01T20:36:24.088099-03:00",
+        "last_message": "2020-09-01T20:51:57.278901-03:00"
+      }
+    },
+    "rssi": 0,
+    "time_boot_ms": 3122812,
+    "type": "RC_CHANNELS"
+  }
+  { // Second message
+    "chan1_raw": 1500,
+    "chan2_raw": 1500,
+    "chan3_raw": 1500,
+    "chan4_raw": 1500,
+    "chan5_raw": 1500,
+    "chan6_raw": 1500,
+    "chan7_raw": 1500,
+    "chan8_raw": 1500,
+    "message_information": {
+      "counter": 3732,
+      "frequency": 4.0,
+      "time": {
+        "first_message": "2020-09-01T20:36:24.088310-03:00",
+        "last_message": "2020-09-01T20:51:57.279438-03:00"
+      }
+    },
+    "port": 0,
+    "rssi": 0,
+    "time_boot_ms": 3122812,
+    "type": "RC_CHANNELS_RAW"
+  }
+  ```
+For a demonstration, please check the example under the examples filder: `websocket_client.py`
