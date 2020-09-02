@@ -270,10 +270,6 @@ The following benchmarks were in a raspberry pi 3.
     ```
     11% CPU usage
     ```
-- 1 websocket with no filters
-    ```
-    11% CPU usage
-    ```
 - 5 websocket with no filters
     ```
     24% CPU usage (14% @ 1 core, ~3% @ 3 cores)
