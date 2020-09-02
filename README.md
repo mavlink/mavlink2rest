@@ -266,7 +266,26 @@ The following benchmarks were in a raspberry pi 3.
     ```
     20% CPU usage (~5% each core)
     ```
-
+- 1 websocket with no filters
+    ```
+    11% CPU usage
+    ```
+- 1 websocket with no filters
+    ```
+    11% CPU usage
+    ```
+- 5 websocket with no filters
+    ```
+    24% CPU usage (14% @ 1 core, ~3% @ 3 cores)
+    ```
+- 20 websocket with filter only for **ATTITUDE** message
+    ```
+    9% CPU usage
+    ```
+- 20 websocket with no filters
+    ```
+    48% CPU usage (20% @ 1 core, ~9% @ 3 cores)
+    ```
 - 1 client requesting all mavlink messages 1000 times
     ```
     60% CPU usage (~15% each core)
