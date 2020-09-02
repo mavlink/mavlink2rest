@@ -257,6 +257,16 @@ For a demonstration, please check the example under the examples filder: `websoc
 
 # Benchmark
 The following benchmarks were in a raspberry pi 3.
+- 1 client requesting all mavlink messages at 10Hz
+    ```
+    9% CPU usage
+    ```
+
+- 1 client requesting all mavlink messages at 100Hz
+    ```
+    20% CPU usage (~5% each core)
+    ```
+
 - 1 client requesting all mavlink messages 1000 times
     ```
     60% CPU usage (~15% each core)
