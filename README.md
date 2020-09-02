@@ -1,5 +1,7 @@
 # Mavlink2Rest
 [![Build status](https://travis-ci.org/patrickelectric/mavlink2rest.svg)](https://travis-ci.org/patrickelectric/mavlink2rest)
+[![Build status](https://ci.appveyor.com/api/projects/status/vbchylr914oq3yhu?svg=true)](https://ci.appveyor.com/project/patrickelectric/mavlink2rest)
+![Test](https://github.com/patrickelectric/mavlink2rest/workflows/Test/badge.svg)
 [![Cargo download](https://img.shields.io/crates/d/mavlink2rest)](https://crates.io/crates/mavlink2rest)
 [![Crate info](https://img.shields.io/crates/v/mavlink2rest.svg)](https://crates.io/crates/mavlink2rest)
 [![Documentation](https://docs.rs/mavlink2rest/badge.svg)](https://docs.rs/mavlink2rest)
