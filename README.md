@@ -270,19 +270,19 @@ The following benchmarks were in a raspberry pi 3.
     ```
     11% CPU usage
     ```
-- 5 websocket with no filters
+- 5 websockets with no filters
     ```
     24% CPU usage (14% @ 1 core, ~3% @ 3 cores)
     ```
-- 20 websocket with filter only for **ATTITUDE** message (receiving at 10Hz)
+- 20 websockets with filter only for **ATTITUDE** message (receiving at 10Hz)
     ```
     9% CPU usage
     ```
-- 20 websocket with filter only for **NAMED_VALUE_FLOAT** message (receiving at 70Hz)
+- 20 websockets with filter only for **NAMED_VALUE_FLOAT** message (receiving at 70Hz)
     ```
     17% CPU usage (9% @ 1 core, ~2% @ 3 cores)
     ```
-- 20 websocket with no filters
+- 20 websockets with no filters
     ```
     48% CPU usage (20% @ 1 core, ~9% @ 3 cores)
     ```
