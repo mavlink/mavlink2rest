@@ -1,6 +1,7 @@
 dist: xenial
 language: rust
 sudo: required
+cache: cargo
 
 env:
   global:
