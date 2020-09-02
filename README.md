@@ -254,3 +254,43 @@ It's also possible to connect multiple websockets with the following path `/ws/m
   }
   ```
 For a demonstration, please check the example under the examples filder: `websocket_client.py`
+
+# Benchmark
+The following benchmarks were in a raspberry pi 3.
+- 1 client requesting all mavlink messages 1000 times
+    ```
+    60% CPU usage (~15% each core)
+    Time taken for tests      3.7 seconds
+    Total requests            1000
+    Successful requests       1000
+    Failed requests           0
+    Requests per second       273.60 [#/sec]
+    Median time per request   3ms
+    Average time per request  4ms
+    ```
+
+- 10 clients requesting all mavlink messages, 100 requests for each client.
+    ```
+    140% CPU usage (~46% each core)
+    Time taken for tests      1.4 seconds
+    Total requests            1000
+    Successful requests       1000
+    Failed requests           0
+    Requests per second       733.14 [#/sec]
+    Median time per request   13ms
+    Average time per request  13ms
+    Sample standard deviation 3ms
+    ```
+
+- 100 clients requesting all mavlink messages, 1000 requests for each client.
+    ```
+    140% CPU usage (~46% each core)
+    Time taken for tests      13.8 seconds
+    Total requests            10000
+    Successful requests       10000
+    Failed requests           0
+    Requests per second       725.83 [#/sec]
+    Median time per request   132ms
+    Average time per request  137ms
+    Sample standard deviation 54ms
+    ```
