@@ -256,12 +256,15 @@ It's also possible to connect multiple websockets with the following path `/ws/m
 For a demonstration, please check the example under the examples filder: `websocket_client.py`
 
 # Benchmark
-The following benchmarks were extracted from a raspberry pi 3.
+The following benchmarks were extracted from a raspberry pi 3 connected to a pixhawk running ArduSub.
+- In idle.
+    ```
+    6% CPU usage
+    ```
 - 1 client requesting all mavlink messages at 10Hz
     ```
     9% CPU usage
     ```
-
 - 1 client requesting all mavlink messages at 100Hz
     ```
     20% CPU usage (~5% each core)
