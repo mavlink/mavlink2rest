@@ -256,7 +256,7 @@ It's also possible to connect multiple websockets with the following path `/ws/m
 For a demonstration, please check the example under the examples filder: `websocket_client.py`
 
 # Benchmark
-The following benchmarks were in a raspberry pi 3.
+The following benchmarks were extracted from a raspberry pi 3.
 - 1 client requesting all mavlink messages at 10Hz
     ```
     9% CPU usage
