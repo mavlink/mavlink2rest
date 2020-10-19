@@ -3,7 +3,7 @@ use std::sync::{Arc, Mutex};
 use actix_cors::Cors;
 use actix_web::{middleware, web, App, HttpRequest, HttpResponse, HttpServer};
 use actix_web_actors::ws;
-use clap;
+
 use serde_derive::Deserialize;
 
 mod message_information;
@@ -107,7 +107,7 @@ async fn main() -> std::io::Result<()> {
         };
 
         let data = RestData {
-            api: api.clone(),
+            api,
             vehicle: inner_vehicle.clone(),
             websocket: websocket.clone(),
         };
@@ -118,7 +118,7 @@ async fn main() -> std::io::Result<()> {
             .service(web::resource("/").route(web::get().to(
                 |data: web::Data<Arc<Mutex<RestData>>>| async move {
                     let answer = data.lock().unwrap().api.lock().unwrap().root_page();
-                    return answer;
+                    answer
                 },
             )))
             .service(web::resource("/ws/mavlink").route(web::get().to(
@@ -144,7 +144,7 @@ async fn main() -> std::io::Result<()> {
                         web::get().to(|data: web::Data<Arc<Mutex<RestData>>>, bytes| async move {
                             let answer =
                                 data.lock().unwrap().api.lock().unwrap().mavlink_page(bytes);
-                            return answer;
+                            answer
                         }),
                     )
                     .route(
@@ -152,7 +152,7 @@ async fn main() -> std::io::Result<()> {
                         web::get().to(|data: web::Data<Arc<Mutex<RestData>>>, bytes| async move {
                             let answer =
                                 data.lock().unwrap().api.lock().unwrap().mavlink_page(bytes);
-                            return answer;
+                            answer
                         }),
                     )
                     .route(
@@ -201,7 +201,7 @@ async fn main() -> std::io::Result<()> {
                         .lock()
                         .unwrap()
                         .mavlink_helper_page(bytes);
-                    return answer;
+                    answer
                 },
             )))
     })

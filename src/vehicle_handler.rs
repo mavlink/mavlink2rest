@@ -107,14 +107,11 @@ impl InnerVehicle {
                 }
                 Err(error) => {
                     println!("recv error: {:?}", error);
-                    match error {
-                        mavlink::error::MessageReadError::Io(error) => {
-                            if error.kind() == std::io::ErrorKind::UnexpectedEof {
-                                // We're probably running a file, time to exit!
-                                std::process::exit(0);
-                            }
-                        }
-                        _ => {}
+                    if let mavlink::error::MessageReadError::Io(error) = error {
+                        if error.kind() == std::io::ErrorKind::UnexpectedEof {
+                            // We're probably running a file, time to exit!
+                            std::process::exit(0);
+                        };
                     }
                 }
             }

@@ -1,6 +1,5 @@
 use std::sync::{Arc, Mutex};
 
-use chrono;
 use chrono::offset::TimeZone;
 
 use actix_web::http::StatusCode;
@@ -95,7 +94,7 @@ impl API {
         if query.pretty.is_some() && query.pretty.unwrap() {
             return serde_json::to_string_pretty(&message).unwrap_or(error_message);
         }
-        return serde_json::to_string(&message).unwrap_or(error_message);
+        serde_json::to_string(&message).unwrap_or(error_message)
     }
 
     pub fn mavlink_page(&self, req: HttpRequest) -> impl Responder {
@@ -182,8 +181,7 @@ impl API {
         let json_string = json_string.unwrap();
 
         let result = serde_json::from_str::<MavlinkMessageCommon>(&json_string);
-        if result.is_ok() {
-            let msg = result.unwrap();
+        if let Ok(msg) = result {
             return Ok(MavlinkMessage {
                 header: msg.header,
                 message: mavlink::ardupilotmega::MavMessage::common(msg.message),
@@ -196,8 +194,10 @@ impl API {
         ));
 
         let result = serde_json::from_str::<MavlinkMessage>(&json_string);
-        if result.is_ok() {
-            return Ok(result.unwrap());
+
+        if let Ok(content) = result {
+            // Remove serde_json::Error
+            return Ok(content);
         }
         errors.push(format!(
             "Failed to parse ardupilotmega message: {:#?}",

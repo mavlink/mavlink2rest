@@ -25,7 +25,7 @@ pub struct WebsocketManager {
 }
 
 impl WebsocketManager {
-    pub fn send(&self, value: &serde_json::Value, name: &String) {
+    pub fn send(&self, value: &serde_json::Value, name: &str) {
         if self.clients.is_empty() {
             return;
         }
@@ -48,7 +48,7 @@ pub struct WebsocketActor {
 impl WebsocketActor {
     pub fn new(message_filter: String, server: Arc<Mutex<WebsocketManager>>) -> Self {
         Self {
-            server: server,
+            server,
             filter: message_filter,
         }
     }

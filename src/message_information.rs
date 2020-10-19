@@ -1,4 +1,3 @@
-use chrono;
 use serde::Serialize;
 
 #[derive(Serialize, Debug, Copy, Clone)]
@@ -16,14 +15,14 @@ pub struct MessageInformation {
 
 impl Default for MessageInformation {
     fn default() -> MessageInformation {
-        return MessageInformation {
+        MessageInformation {
             counter: 0,
             frequency: 0.0,
             time: Time {
                 first_message: chrono::Local::now(),
                 last_message: chrono::Local::now(),
             },
-        };
+        }
     }
 }
 
