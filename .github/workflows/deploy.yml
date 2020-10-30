@@ -1,0 +1,46 @@
+name: Deploy mavlink2rest unix
+
+on: push
+
+jobs:
+  build:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        include:
+        - os: macos-latest
+          TARGET: x86_64-apple-darwin
+
+        - os: ubuntu-latest
+          TARGET: arm-unknown-linux-musleabihf
+
+        - os: ubuntu-latest
+          TARGET: armv7-unknown-linux-musleabihf
+
+        - os: ubuntu-latest
+          TARGET: x86_64-unknown-linux-musl
+
+    steps:
+    - name: Building ${{ matrix.TARGET }}
+      run: echo "${{ matrix.TARGET }}"
+
+    - uses: actions/checkout@master
+    - uses: actions-rs/toolchain@v1.0.1
+      with:
+        toolchain: stable
+        target: ${{ matrix.TARGET }}
+        override: true
+
+    - uses: actions-rs/cargo@v1
+      with:
+        use-cross: true
+        command: build
+        args: --verbose --release --target=${{ matrix.TARGET }}
+
+    - name: Rename
+      run: cp target/${{ matrix.TARGET }}/release/mavlink2rest mavlink2rest-${{ matrix.TARGET }}
+
+    - uses: actions/upload-artifact@master
+      with:
+        name: mavlink2rest-${{ matrix.TARGET }}
+        path: mavlink2rest-${{ matrix.TARGET }}
