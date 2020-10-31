@@ -67,7 +67,7 @@ impl API {
 
         let html = format!(
             r#"<meta http-equiv="refresh" content="1">
-            {} - {} - {}<br>By: {}<br>
+            {} - {} - {} - {}<br>By: {}<br>
             Check the <a href="\mavlink">mavlink path</a> for the data<br>
             You can also check nested paths: <a href="mavlink/HEARTBEAT/mavtype/type">mavlink/HEARTBEAT/mavtype/type</a><br>
             <br>
@@ -76,6 +76,7 @@ impl API {
             "#,
             env!("CARGO_PKG_NAME"),
             env!("CARGO_PKG_VERSION"),
+            env!("VERGEN_SHA_SHORT"),
             env!("VERGEN_BUILD_DATE"),
             env!("CARGO_PKG_AUTHORS"),
             html_list,
