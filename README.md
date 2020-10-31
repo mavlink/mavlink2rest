@@ -1,6 +1,5 @@
 # Mavlink2Rest
-[![Build status](https://travis-ci.org/patrickelectric/mavlink2rest.svg)](https://travis-ci.org/patrickelectric/mavlink2rest)
-[![Build status](https://ci.appveyor.com/api/projects/status/vbchylr914oq3yhu?svg=true)](https://ci.appveyor.com/project/patrickelectric/mavlink2rest)
+![Build](https://github.com/patrickelectric/mavlink2rest/workflows/Deploy%20mavlink2rest/badge.svg)
 ![Test](https://github.com/patrickelectric/mavlink2rest/workflows/Test/badge.svg)
 [![Cargo download](https://img.shields.io/crates/d/mavlink2rest)](https://crates.io/crates/mavlink2rest)
 [![Crate info](https://img.shields.io/crates/v/mavlink2rest.svg)](https://crates.io/crates/mavlink2rest)
@@ -15,11 +14,14 @@ The current version supports the **ardupilotmega** dialect, that includes **comm
 
 ## Downloads :package:
 
-- :computer: [**Windows**](https://github.com/patrickelectric/mavlink2rest/releases/download/continuous/mavlink2rest-i686-pc-windows-msvc.zip)
-- :apple: [**MacOS**](https://github.com/patrickelectric/mavlink2rest/releases/download/continuous/mavlink2rest-x86_64-apple-darwin)
-- :penguin: [**Linux**](https://github.com/patrickelectric/mavlink2rest/releases/download/continuous/mavlink2rest-x86_64-unknown-linux-musl)
-- :strawberry: [**Raspberry**](https://github.com/patrickelectric/mavlink2rest/releases/download/continuous/mavlink2rest-arm-unknown-linux-musleabihf)
-  - ARMv6 binary, ARMv7 is also available under the project releases.
+[Continuous builds](https://github.com/patrickelectric/mavlink2rest/releases/tag/master):
+- :computer: [**Windows**](https://github.com/patrickelectric/mavlink2rest/releases/download/master/mavlink2rest-x86_64-pc-windows-msvc.exe)
+- :apple: [**MacOS**](https://github.com/patrickelectric/mavlink2rest/releases/download/master/mavlink2rest-x86_64-apple-darwin)
+- :penguin: [**Linux**](https://github.com/patrickelectric/mavlink2rest/releases/download/master/mavlink2rest-x86_64-unknown-linux-musl)
+- :strawberry: [**Raspberry**](https://github.com/patrickelectric/mavlink2rest/releases/download/master/mavlink2rest-arm-unknown-linux-musleabihf)
+  - [ARMv6 binary](https://github.com/patrickelectric/mavlink2rest/releases/download/master/mavlink2rest-arm-unknown-linux-musleabihf), [ARMv7](https://github.com/patrickelectric/mavlink2rest/releases/download/master/mavlink2rest-armv7-unknown-linux-musleabihf) is also available under the project releases.
+
+For others or different releases, check the [releases menu](https://github.com/patrickelectric/mavlink2rest/releases).
 
 ## Endpoints
 
