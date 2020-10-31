@@ -20,6 +20,10 @@ jobs:
         - os: ubuntu-latest
           TARGET: x86_64-unknown-linux-musl
 
+        - os: windows-latest
+          TARGET: x86_64-pc-windows-msvc
+          EXTENSION: .exe
+
     steps:
     - name: Building ${{ matrix.TARGET }}
       run: echo "${{ matrix.TARGET }}"
@@ -38,9 +42,9 @@ jobs:
         args: --verbose --release --target=${{ matrix.TARGET }}
 
     - name: Rename
-      run: cp target/${{ matrix.TARGET }}/release/mavlink2rest mavlink2rest-${{ matrix.TARGET }}
+      run: cp target/${{ matrix.TARGET }}/release/mavlink2rest${{ matrix.EXTENSION }} mavlink2rest-${{ matrix.TARGET }}${{ matrix.EXTENSION }}
 
     - uses: actions/upload-artifact@master
       with:
-        name: mavlink2rest-${{ matrix.TARGET }}
-        path: mavlink2rest-${{ matrix.TARGET }}
+        name: mavlink2rest-${{ matrix.TARGET }}${{ matrix.EXTENSION }}
+        path: mavlink2rest-${{ matrix.TARGET }}${{ matrix.EXTENSION }}
