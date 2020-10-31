@@ -1,4 +1,4 @@
-name: Deploy mavlink2rest unix
+name: Deploy mavlink2rest
 
 on: [push, pull_request]
 
