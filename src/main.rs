@@ -25,7 +25,15 @@ struct WebsocketQuery {
 #[actix_rt::main]
 async fn main() -> std::io::Result<()> {
     let matches = clap::App::new(env!("CARGO_PKG_NAME"))
-        .version(format!("{}-{} ({})", env!("CARGO_PKG_VERSION"), env!("VERGEN_SHA_SHORT"), env!("VERGEN_BUILD_DATE")).as_str())
+        .version(
+            format!(
+                "{}-{} ({})",
+                env!("CARGO_PKG_VERSION"),
+                env!("VERGEN_SHA_SHORT"),
+                env!("VERGEN_BUILD_DATE")
+            )
+            .as_str(),
+        )
         .about("MAVLink to REST API!")
         .author(env!("CARGO_PKG_AUTHORS"))
         .arg(
