@@ -15,7 +15,7 @@ mod rest_api;
 use rest_api::API;
 
 mod websocket_manager;
-use websocket_manager::{WebsocketActor, WebsocketManager};
+use websocket_manager::{WebsocketActor, WebsocketError, WebsocketManager};
 
 #[derive(Deserialize)]
 struct WebsocketQuery {
@@ -98,6 +98,30 @@ async fn main() -> std::io::Result<()> {
     let api = Arc::new(Mutex::new(API::new(Arc::clone(
         &inner_vehicle_message.messages,
     ))));
+
+    let callback_inner_vehicle = inner_vehicle.clone();
+    let callback_api = api.clone();
+    let callback_webscoket = websocket.clone();
+    callback_webscoket.lock().unwrap().new_message_callback = Some(Arc::new(move |value| {
+        let content = callback_api
+            .lock()
+            .unwrap()
+            .extract_mavlink_from_string(value);
+        if content.is_err() {
+            return serde_json::to_string(&WebsocketError {
+                error: format!("{:#?}", content),
+            })
+            .unwrap();
+        }
+        let msg = content.unwrap();
+        let result = callback_inner_vehicle
+            .lock()
+            .unwrap()
+            .channel
+            .send(&msg.header, &msg.message);
+
+        format!("{:#?}", result)
+    }));
 
     println!("MAVLink connection string: {}", connection_string);
     println!("REST API address: {}", server_string);

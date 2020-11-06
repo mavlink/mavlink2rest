@@ -3,14 +3,24 @@ use std::sync::{Arc, Mutex};
 use actix::{Actor, Addr, AsyncContext, Handler, Message, StreamHandler}; //TODO: Check include orders
 use actix_web_actors::ws;
 
+extern crate derivative;
 extern crate regex;
 
 use regex::Regex;
+
+use derivative::Derivative;
+
+use serde::Serialize;
 
 pub struct StringMessage(String);
 
 impl Message for StringMessage {
     type Result = ();
+}
+
+#[derive(Serialize, Debug)]
+pub struct WebsocketError {
+    pub error: String,
 }
 
 #[derive(Debug)]
@@ -19,9 +29,12 @@ pub struct WebsocketActorContent {
     pub re: Regex,
 }
 
-#[derive(Default, Debug)]
+#[derive(Derivative, Default)]
+#[derivative(Debug)]
 pub struct WebsocketManager {
     pub clients: Vec<WebsocketActorContent>,
+    #[derivative(Debug = "ignore")]
+    pub new_message_callback: Option<Arc<dyn Fn(&String) -> String + Send + Sync>>,
 }
 
 impl WebsocketManager {
@@ -91,7 +104,16 @@ impl StreamHandler<Result<ws::Message, ws::ProtocolError>> for WebsocketActor {
     fn handle(&mut self, msg: Result<ws::Message, ws::ProtocolError>, ctx: &mut Self::Context) {
         match msg {
             Ok(ws::Message::Ping(msg)) => ctx.pong(&msg),
-            Ok(ws::Message::Text(text)) => ctx.text(text),
+            Ok(ws::Message::Text(text)) => {
+                let text = match &self.server.lock().unwrap().new_message_callback {
+                    Some(callback) => callback(&text),
+                    None => serde_json::to_string(&WebsocketError {
+                        error: "MAVLink callback does not exist.".to_string(),
+                    })
+                    .unwrap(),
+                };
+                ctx.text(text);
+            }
             Ok(ws::Message::Binary(bin)) => ctx.binary(bin),
             _ => (),
         }

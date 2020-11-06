@@ -173,6 +173,7 @@ impl API {
 
     pub fn mavlink_post(&mut self, bytes: web::Bytes) -> Result<MavlinkMessage, std::io::Error> {
         let json_string = String::from_utf8(bytes.to_vec());
+
         if json_string.is_err() {
             return Err(std::io::Error::new(
                 std::io::ErrorKind::Other,
@@ -180,7 +181,13 @@ impl API {
             ));
         }
         let json_string = json_string.unwrap();
+        self.extract_mavlink_from_string(&json_string)
+    }
 
+    pub fn extract_mavlink_from_string(
+        &mut self,
+        json_string: &String,
+    ) -> Result<MavlinkMessage, std::io::Error> {
         let result = serde_json::from_str::<MavlinkMessageCommon>(&json_string);
         if let Ok(msg) = result {
             return Ok(MavlinkMessage {
