@@ -57,5 +57,5 @@ jobs:
         file: mavlink2rest-${{ matrix.TARGET }}${{ matrix.EXTENSION }}
         asset_name: mavlink2rest-${{ matrix.TARGET }}${{ matrix.EXTENSION }}
         tag: ${{ github.ref }}
-        prerelease: ${{ !startsWith(github.ref, 'refs/tags/v') }}
+        prerelease: ${{ !startsWith(github.ref, 'refs/tags/') }}
         overwrite: true
