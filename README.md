@@ -198,7 +198,7 @@ For others or different releases, check the [releases menu](https://github.com/p
 
 ### Websocket
 
-It's also possible to connect multiple websockets with the following path `/ws/mavlink`, the endpoint also accepts the query parameter `filter`, the filter value should be a regex that matches MAVLink message names, E.g: `/ws/mavlink?filter=RC_.*` will match **RC_CHANNELS_RAW** and **RC_CHANNELS**, resulting in the following output:
+It's also possible to connect multiple websockets with the following path `/ws/mavlink`, the endpoint also accepts the query parameter `filter`, the filter value should be a regex that matches MAVLink message names, E.g: `/ws/mavlink?filter=.*` for all messages, `/ws/mavlink?filter=RC_.*` will match **RC_CHANNELS_RAW** and **RC_CHANNELS**, resulting in the following output:
   ```json
   { // First message
     "chan10_raw": 0,
