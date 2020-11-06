@@ -27,6 +27,7 @@ actix-web = "2.0.0"
 actix-web-actors = "2.0.0"
 chrono = { version = "0.4", features = ["serde"] }
 clap = "2.33.3"
+derivative = "2.1.1"
 mavlink = { version = "0.8.5", features = [ "emit-extensions", "ardupilotmega"] }
 regex = "1"
 serde = "1.0.115"
