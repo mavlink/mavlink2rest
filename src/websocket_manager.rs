@@ -26,7 +26,7 @@ pub struct WebsocketError {
 #[derive(Debug)]
 pub struct WebsocketActorContent {
     pub actor: Addr<WebsocketActor>,
-    pub re: Regex,
+    pub re: Option<Regex>,
 }
 
 #[derive(Derivative, Default)]
@@ -45,8 +45,10 @@ impl WebsocketManager {
 
         let string = serde_json::to_string_pretty(value).unwrap();
         for client in &self.clients {
-            if client.re.is_match(name) {
-                client.actor.do_send(StringMessage(string.clone()));
+            if client.re.is_some() {
+                if client.re.as_ref().unwrap().is_match(name) {
+                    client.actor.do_send(StringMessage(string.clone()));
+                }
             }
         }
     }
@@ -88,7 +90,7 @@ impl StreamHandler<Result<ws::Message, ws::ProtocolError>> for WebsocketActor {
             .clients
             .push(WebsocketActorContent {
                 actor: ctx.address(),
-                re: Regex::new(&self.filter).unwrap_or(Regex::new(".*").unwrap()),
+                re: Regex::new(&self.filter).ok(),
             });
     }
 
