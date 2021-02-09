@@ -9,10 +9,8 @@
 
 The current version supports the **ardupilotmega** dialect, that includes **common**, **icarous** and **uavionix**.
 
-## Install :zap:
-- :gear: Cargo Install: `cargo install mavlink2rest`
-
-## Downloads :package:
+## Grab it
+### Downloads :package:
 
 [Continuous builds](https://github.com/patrickelectric/mavlink2rest/releases/tag/master):
 - :computer: [**Windows**](https://github.com/patrickelectric/mavlink2rest/releases/download/master/mavlink2rest-x86_64-pc-windows-msvc.exe)
@@ -22,6 +20,9 @@ The current version supports the **ardupilotmega** dialect, that includes **comm
   - [ARMv6 binary](https://github.com/patrickelectric/mavlink2rest/releases/download/master/mavlink2rest-arm-unknown-linux-musleabihf), [ARMv7](https://github.com/patrickelectric/mavlink2rest/releases/download/master/mavlink2rest-armv7-unknown-linux-musleabihf) is also available under the project releases.
 
 For others or different releases, check the [releases menu](https://github.com/patrickelectric/mavlink2rest/releases).
+
+### Install :zap:
+- :gear: Cargo Install: `cargo install mavlink2rest`
 
 ## Help
 Capabilities via the command line:
