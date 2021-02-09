@@ -23,6 +23,28 @@ The current version supports the **ardupilotmega** dialect, that includes **comm
 
 For others or different releases, check the [releases menu](https://github.com/patrickelectric/mavlink2rest/releases).
 
+## Help
+Capabilities via the command line:
+```
+USAGE:
+    mavlink2rest [FLAGS] [OPTIONS]
+
+FLAGS:
+    -h, --help       Prints help information
+    -V, --version    Prints version information
+    -v, --verbose    Be verbose
+
+OPTIONS:
+    -c, --connect <TYPE:<IP/SERIAL>:<PORT/BAUDRATE>>
+            Sets the mavlink connection string [default: udpin:0.0.0.0:14550]
+
+        --mavlink <VERSION>
+            Sets the mavlink version used to communicate [default: 2]
+
+    -s, --server <IP:PORT>
+            Sets the IP and port that the rest server will be provided [default: 0.0.0.0:8088]
+```
+
 ## Endpoints
 
 ### Pages
