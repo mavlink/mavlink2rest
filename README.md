@@ -22,6 +22,7 @@ The current version supports the **ardupilotmega** dialect, that includes **comm
 For others or different releases, check the [releases menu](https://github.com/patrickelectric/mavlink2rest/releases).
 
 ### Install :zap:
+If you prefer, you can install via cargo, if you don't know what it is, use the [download section](https://github.com/patrickelectric/mavlink2rest#downloads-package).
 - :gear: Cargo Install: `cargo install mavlink2rest`
 
 ## Help
