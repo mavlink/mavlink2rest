@@ -103,6 +103,22 @@ OPTIONS:
           }
       }
       ```
+* Information:
+  * `GET /info`, provides information about the service version.
+    * http://0.0.0.0:8088/info
+      ```js
+      {
+        "version": 0,
+        "service": {
+          "name": "mavlink2rest",
+          "version": "0.10.0",
+          "sha": "bd7667d",
+          "build_date": "2021-03-03",
+          "authors": "Author <email>"
+        }
+      }
+      ```
+
 
 #### Examples
 
