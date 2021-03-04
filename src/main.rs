@@ -147,12 +147,12 @@ async fn main() -> std::io::Result<()> {
             .wrap(Cors::default())
             .wrap(middleware::NormalizePath)
             .data(Arc::new(Mutex::new(data)))
-            .service(web::resource("/").route(web::get().to(
-                |data: web::Data<Arc<Mutex<RestData>>>| async move {
-                    let answer = data.lock().unwrap().api.lock().unwrap().root_page();
-                    answer
-                },
-            )))
+            .service(web::resource("/").route(web::get().to(rest_api::redirect_root_page)))
+            .service(
+                web::resource(r"/{filename:.*(\.html|\.js)}")
+                    .route(web::get().to(rest_api::root_page)),
+            )
+            .service(web::resource("/info").route(web::get().to(rest_api::info)))
             .service(web::resource("/ws/mavlink").route(web::get().to(
                 |data: web::Data<Arc<Mutex<RestData>>>,
                  req: HttpRequest,
