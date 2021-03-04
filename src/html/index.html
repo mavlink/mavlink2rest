@@ -1,0 +1,77 @@
+<html>
+
+<body>
+    <div id="app" style="display: flex; column-gap: 1em">
+        <div style="display: flex; column-gap: 1em">
+            <div>
+                <div v-if="info">
+                    {{info.service.name}} - {{info.service.version}} - {{info.service.sha}} - {{info.service.build_date}}<br>
+                    By: {{formatAuthors(info.service.authors)}}<br>
+                    Check the <a href="\mavlink">mavlink path</a> for the data<br>
+                    You can also check nested paths: <a href="mavlink/HEARTBEAT/mavtype/type">mavlink/HEARTBEAT/mavtype/type</a><br>
+                </div>
+                <label>List of available paths:</label>
+                <ul>
+                    <li v-for="(obj, key) in data">
+                        <span><a v-bind:href="'mavlink/' + key + '?pretty=true'">mavlink/{{key}}</a> ({{formatHz(obj.message_information.frequency)}}Hz - last update {{formatLastTime(obj.message_information.time.last_message)}}s ago)</span>
+                    </li>
+                </ul>
+            </div>
+            <!--div></div-->
+        </div>
+    </div>
+    <script src="vue.js"></script>
+    <script>
+        const API = `${window.location.protocol}//0.0.0.0:8088`;
+        const app = Vue.createApp({
+            mounted: function () {
+                this.requestData()
+
+                fetch(`${API}/info`)
+                    .then(function(response) {
+                        response.json()
+                            .then((info) => this.info = info );
+                    }.bind(this));
+                this.requestData()
+            },
+            methods: {
+                formatAuthors: function(authors) {
+                    let formatted = authors.split(':').map((author) => {
+                        console.log(`author: ${author}`);
+                        const { groups: { name } } = /(?<name>.*)\ \<.*\>/gm.exec(author);
+                        console.log(`match: ${name}`)
+                        return name;
+                    })
+                    return formatted.join(', ');
+                },
+                formatHz: function(frequency) {
+                    return frequency ? frequency.toFixed(2) : 0.0.toFixed(2)
+                },
+                formatLastTime: function(last_message) {
+                    return ((Date.now() - Date.parse(last_message))/1000).toFixed(3)
+                },
+                requestData: async function() {
+                    setTimeout(function() {
+                        //fetch(`${window.location.protocol}//${window.location.host}/mavlink`)
+                        fetch(`${API}/mavlink`)
+                            .then(function(response) {
+                                response.json()
+                                    .then((data) => this.data = data );
+                            }.bind(this));
+                        this.requestData();
+                    }.bind(this), 500);
+                },
+            },
+            data: function() {
+                return {
+                    data: undefined,
+                    info: undefined
+                };
+            }
+        });
+
+        app.mount("#app")
+    </script>
+</body>
+
+</html>
