@@ -33,7 +33,6 @@ regex = "1"
 serde = "1.0.115"
 serde_json = "1.0.57"
 serde_derive = "1.0.115"
-vergen = "3"
 
 [build-dependencies]
 vergen = "3"
