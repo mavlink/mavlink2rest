@@ -22,7 +22,5 @@ jobs:
       run: cargo build --verbose
     - name: Run tests
       run: |
-        ./tests/download_log_files.sh
-        cargo run -- --connect file:/tmp/testlogs/ArduSub-test.tlog --verbose | sort | uniq > output.txt
+        cargo run -- --connect file:tests/logs/ArduSub-test.tlog --verbose | grep Got: | sort | uniq > output.txt
         if [ $(grep -f tests/output.txt output.txt | wc -l) -ne "$(cat tests/output.txt | wc -l)" ]; then exit 1; fi;
-
