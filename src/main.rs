@@ -21,6 +21,7 @@ mod websocket_manager;
 use websocket_manager::{WebsocketActor, WebsocketError, WebsocketManager};
 
 mod cli;
+mod mavlink_vehicle;
 
 #[derive(Deserialize)]
 struct WebsocketQuery {
@@ -30,6 +31,7 @@ struct WebsocketQuery {
 #[actix_rt::main]
 async fn main() -> std::io::Result<()> {
     cli::init();
+    mavlink_vehicle::MAVLinkVehicleHandle::new("udpin:0.0.0.0:3333");
 
     let mavlink_version = match cli::mavlink_version() {
         1 => mavlink::MavlinkVersion::V1,
