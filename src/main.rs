@@ -20,6 +20,8 @@ use rest_api::API;
 mod websocket_manager;
 use websocket_manager::{WebsocketActor, WebsocketError, WebsocketManager};
 
+mod cli;
+
 #[derive(Deserialize)]
 struct WebsocketQuery {
     filter: Option<String>,
@@ -27,65 +29,19 @@ struct WebsocketQuery {
 
 #[actix_rt::main]
 async fn main() -> std::io::Result<()> {
-    let matches = clap::App::new(env!("CARGO_PKG_NAME"))
-        .version(
-            format!(
-                "{}-{} ({})",
-                env!("CARGO_PKG_VERSION"),
-                env!("VERGEN_SHA_SHORT"),
-                env!("VERGEN_BUILD_DATE")
-            )
-            .as_str(),
-        )
-        .about("MAVLink to REST API!")
-        .author(env!("CARGO_PKG_AUTHORS"))
-        .arg(
-            clap::Arg::with_name("connect")
-                .short("c")
-                .long("connect")
-                .value_name("TYPE:<IP/SERIAL>:<PORT/BAUDRATE>")
-                .help("Sets the mavlink connection string")
-                .takes_value(true)
-                .default_value("udpin:0.0.0.0:14550"),
-        )
-        .arg(
-            clap::Arg::with_name("server")
-                .short("s")
-                .long("server")
-                .value_name("IP:PORT")
-                .help("Sets the IP and port that the rest server will be provided")
-                .takes_value(true)
-                .default_value("0.0.0.0:8088"),
-        )
-        .arg(
-            clap::Arg::with_name("mavlink")
-                .long("mavlink")
-                .value_name("VERSION")
-                .help("Sets the mavlink version used to communicate")
-                .takes_value(true)
-                .default_value("2"),
-        )
-        .arg(
-            clap::Arg::with_name("verbose")
-                .short("v")
-                .long("verbose")
-                .help("Be verbose")
-                .takes_value(false),
-        )
-        .get_matches();
+    cli::init();
 
-    let verbose = matches.is_present("verbose");
-    let mavlink_version = matches.value_of("mavlink").unwrap();
-    let server_string = matches.value_of("server").unwrap();
-    let connection_string = matches.value_of("connect").unwrap();
-
-    let mavlink_version = match mavlink_version {
-        "1" => mavlink::MavlinkVersion::V1,
-        "2" => mavlink::MavlinkVersion::V2,
+    let mavlink_version = match cli::mavlink_version() {
+        1 => mavlink::MavlinkVersion::V1,
+        2 => mavlink::MavlinkVersion::V2,
         _ => panic!("Invalid mavlink version"),
     };
 
-    let mut vehicle = Vehicle::new(connection_string, mavlink_version, verbose);
+    let mut vehicle = Vehicle::new(
+        cli::mavlink_connection_string(),
+        mavlink_version,
+        cli::is_verbose(),
+    );
 
     let websocket = Arc::new(Mutex::new(WebsocketManager::default()));
 
@@ -126,8 +82,11 @@ async fn main() -> std::io::Result<()> {
         format!("{:#?}", result)
     }));
 
-    println!("MAVLink connection string: {}", connection_string);
-    println!("REST API address: {}", server_string);
+    println!(
+        "MAVLink connection string: {}",
+        cli::mavlink_connection_string()
+    );
+    println!("REST API address: {}", cli::server_address());
 
     // Remove guard after clone
     std::mem::drop(inner_vehicle_message);
@@ -240,7 +199,7 @@ async fn main() -> std::io::Result<()> {
                 },
             )))
     })
-    .bind(server_string)
+    .bind(cli::server_address())
     .unwrap()
     .run()
     .await
