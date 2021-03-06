@@ -16,13 +16,26 @@ jobs:
 
     steps:
     - uses: actions/checkout@v2
+    - uses: actions/setup-python@v2
+      with:
+        python-version: '3.8'
     - name: Check code style
       run: cargo fmt -- --check
     - name: Build
       run: cargo build --verbose
-    - name: Run tests
+    - name: Run parser test
       run: |
         ./tests/download_log_files.sh
         cargo run -- --connect file:/tmp/testlogs/ArduSub-test.tlog --verbose | grep Got: | sort | uniq > output.txt
         if [ $(grep -f tests/output.txt output.txt | wc -l) -ne "$(cat tests/output.txt | wc -l)" ]; then exit 1; fi;
-
+    - name: Run SITL & MAVLink2Rest
+      timeout-minutes: 5
+      run: |
+        pip install --user aiohttp asyncio requests
+        wget https://firmware.ardupilot.org/Sub/stable-4.0.2/SITL_x86_64_linux_gnu/ardusub
+        chmod +x ardusub
+        ./ardusub --model vectored &
+        sleep 5
+        cargo run -- --connect tcpout:0.0.0.0:5760 &
+        sleep 5
+        ./tests/run.py
