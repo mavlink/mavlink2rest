@@ -49,11 +49,6 @@ pub fn command_line_string() -> String {
     return std::env::args().collect::<Vec<String>>().join(" ");
 }
 
-// Return clap::ArgMatches struct
-pub fn matches<'a>() -> clap::ArgMatches<'a> {
-    return MANAGER.as_ref().clap_matches.clone();
-}
-
 fn get_clap_matches<'a>() -> clap::ArgMatches<'a> {
     let version = format!(
         "{}-{} ({})",
