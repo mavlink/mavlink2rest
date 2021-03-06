@@ -1,0 +1,119 @@
+use clap;
+use std::sync::Arc;
+
+#[derive(Debug)]
+struct Manager<'a> {
+    clap_matches: clap::ArgMatches<'a>,
+}
+
+lazy_static! {
+    static ref MANAGER: Arc<Manager<'static>> = Arc::new(Manager::new());
+}
+
+impl Manager<'_> {
+    fn new() -> Self {
+        Self {
+            clap_matches: get_clap_matches(),
+        }
+    }
+}
+
+pub fn init() {
+    MANAGER.as_ref();
+}
+
+pub fn is_verbose() -> bool {
+    return MANAGER.as_ref().clap_matches.is_present("verbose");
+}
+
+pub fn mavlink_connection_string() -> &'static str {
+    return MANAGER.as_ref().clap_matches.value_of("connect").unwrap();
+}
+
+pub fn server_address() -> &'static str {
+    return MANAGER.as_ref().clap_matches.value_of("server").unwrap();
+}
+
+pub fn mavlink_version() -> u8 {
+    return MANAGER
+        .as_ref()
+        .clap_matches
+        .value_of("mavlink")
+        .unwrap()
+        .parse::<u8>()
+        .unwrap();
+}
+
+// Return the command line used to start this application
+pub fn command_line_string() -> String {
+    return std::env::args().collect::<Vec<String>>().join(" ");
+}
+
+// Return clap::ArgMatches struct
+pub fn matches<'a>() -> clap::ArgMatches<'a> {
+    return MANAGER.as_ref().clap_matches.clone();
+}
+
+fn get_clap_matches<'a>() -> clap::ArgMatches<'a> {
+    let version = format!(
+        "{}-{} ({})",
+        env!("CARGO_PKG_VERSION"),
+        env!("VERGEN_SHA_SHORT"),
+        env!("VERGEN_BUILD_DATE")
+    );
+
+    let matches = clap::App::new(env!("CARGO_PKG_NAME"))
+        .version(version.as_str())
+        .about("MAVLink to REST API!")
+        .author(env!("CARGO_PKG_AUTHORS"))
+        .arg(
+            clap::Arg::with_name("connect")
+                .short("c")
+                .long("connect")
+                .value_name("TYPE:<IP/SERIAL>:<PORT/BAUDRATE>")
+                .help("Sets the mavlink connection string")
+                .takes_value(true)
+                .default_value("udpin:0.0.0.0:14550"),
+        )
+        .arg(
+            clap::Arg::with_name("server")
+                .short("s")
+                .long("server")
+                .value_name("IP:PORT")
+                .help("Sets the IP and port that the rest server will be provided")
+                .takes_value(true)
+                .default_value("0.0.0.0:8088"),
+        )
+        .arg(
+            clap::Arg::with_name("mavlink")
+                .long("mavlink")
+                .value_name("VERSION")
+                .help("Sets the mavlink version used to communicate")
+                .takes_value(true)
+                .possible_values(&["1", "2"])
+                .default_value("2"),
+        )
+        .arg(
+            clap::Arg::with_name("verbose")
+                .short("v")
+                .long("verbose")
+                .help("Be verbose")
+                .takes_value(false),
+        );
+
+    return matches.get_matches();
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn default_arguments() {
+        assert_eq!(is_verbose(), false);
+        assert_eq!(mavlink_connection_string(), "udpin:0.0.0.0:14550");
+        assert_eq!(server_address(), "0.0.0.0:8088");
+        assert_eq!(mavlink_version(), 2);
+        assert_eq!(is_verbose(), false);
+    }
+}
