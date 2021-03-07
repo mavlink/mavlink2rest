@@ -31,13 +31,25 @@ struct WebsocketQuery {
 #[actix_rt::main]
 async fn main() -> std::io::Result<()> {
     cli::init();
-    mavlink_vehicle::MAVLinkVehicleHandle::new("udpin:0.0.0.0:3333");
 
     let mavlink_version = match cli::mavlink_version() {
         1 => mavlink::MavlinkVersion::V1,
         2 => mavlink::MavlinkVersion::V2,
         _ => panic!("Invalid mavlink version"),
     };
+
+    let vehicle = mavlink_vehicle::MAVLinkVehicleHandle::<mavlink::ardupilotmega::MavMessage>::new(
+        cli::mavlink_connection_string(),
+        mavlink_version,
+    );
+
+    loop {
+        std::thread::sleep(std::time::Duration::from_secs(1));
+
+        while let Ok((header, msg)) = vehicle.thread_rx_channel.recv() {
+            println!("MASTER: {:#? }{:?}", header, msg);
+        }
+    }
 
     let mut vehicle = Vehicle::new(
         cli::mavlink_connection_string(),
@@ -174,12 +186,9 @@ async fn main() -> std::io::Result<()> {
                                 .channel
                                 .send(&msg.header, &msg.message);
                             if result.is_err() {
-                                return HttpResponse::NotFound().content_type("text/plain").body(
-                                    format!(
-                                        "Error: {:#?}",
-                                        result.err().unwrap().into_inner().unwrap()
-                                    ),
-                                );
+                                return HttpResponse::NotFound()
+                                    .content_type("text/plain")
+                                    .body(format!("Error: {:#?}", result.err().unwrap()));
                             }
 
                             return HttpResponse::Ok()
