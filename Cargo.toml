@@ -29,7 +29,7 @@ chrono = { version = "0.4", features = ["serde"] }
 clap = "2.33.3"
 derivative = "2.1.1"
 lazy_static = "1.4.0"
-mavlink = { version = "0.8.5", features = [ "emit-extensions", "ardupilotmega"] }
+mavlink = { git = "https://github.com/mavlink/rust-mavlink", branch = "master", features = [ "emit-extensions", "ardupilotmega"] }
 regex = "1"
 serde = "1.0.115"
 serde_json = "1.0.57"
