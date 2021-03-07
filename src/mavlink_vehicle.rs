@@ -1,4 +1,4 @@
-use std::sync::{Arc, Mutex};
+use std::sync::{mpsc, Arc, Mutex};
 
 use mavlink;
 
@@ -13,34 +13,40 @@ pub struct MAVLinkVehicleHandle<M: mavlink::Message> {
     mavlink_vehicle: Arc<Mutex<MAVLinkVehicle<M>>>,
     heartbeat_thread: std::thread::JoinHandle<()>,
     receive_message_thread: std::thread::JoinHandle<()>,
-    //thread_rx_channel: std::sync::mpsc::Receiver<(mavlink::MavHeader, M)>,
+    pub thread_rx_channel: std::sync::mpsc::Receiver<(mavlink::MavHeader, M)>,
 }
 
 impl<M: mavlink::Message> MAVLinkVehicle<M> {
-    fn new(mavlink_connection_string: &str) -> Self {
+    fn new(mavlink_connection_string: &str, version: mavlink::MavlinkVersion) -> Self {
+        let mut vehicle = mavlink::connect(&mavlink_connection_string).unwrap();
+        vehicle.set_protocol_version(version);
         Self {
-            vehicle: Arc::new(mavlink::connect(&mavlink_connection_string).unwrap()),
+            vehicle: Arc::new(vehicle),
         }
     }
 }
 
-impl<M: 'static + mavlink::Message + std::fmt::Debug + From<mavlink::common::MavMessage>>
-    MAVLinkVehicleHandle<M>
+impl<
+        M: 'static + mavlink::Message + std::fmt::Debug + From<mavlink::common::MavMessage> + Send,
+    > MAVLinkVehicleHandle<M>
 {
-    pub fn new(connection_string: &str) -> Self {
+    pub fn new(connection_string: &str, version: mavlink::MavlinkVersion) -> Self {
         let mavlink_vehicle: Arc<Mutex<MAVLinkVehicle<M>>> = Arc::new(Mutex::new(
-            MAVLinkVehicle::<M>::new(connection_string.clone()),
+            MAVLinkVehicle::<M>::new(connection_string.clone(), version),
         ));
 
         let heartbeat_mavlink_vehicle = mavlink_vehicle.clone();
         let receive_message_mavlink_vehicle = mavlink_vehicle.clone();
 
+        let (tx_channel, rx_channel) = mpsc::channel::<(mavlink::MavHeader, M)>();
+
         Self {
             mavlink_vehicle: mavlink_vehicle.clone(),
             heartbeat_thread: std::thread::spawn(move || heartbeat_loop(heartbeat_mavlink_vehicle)),
             receive_message_thread: std::thread::spawn(move || {
-                receive_message_loop(receive_message_mavlink_vehicle)
+                receive_message_loop(receive_message_mavlink_vehicle, tx_channel);
             }),
+            thread_rx_channel: rx_channel,
         }
     }
 
@@ -54,6 +60,7 @@ fn receive_message_loop<
     M: mavlink::Message + std::fmt::Debug + From<mavlink::common::MavMessage>,
 >(
     mavlink_vehicle: Arc<Mutex<MAVLinkVehicle<M>>>,
+    channel: std::sync::mpsc::Sender<(mavlink::MavHeader, M)>,
 ) {
     let mavlink_vehicle = mavlink_vehicle.as_ref().lock().unwrap();
 
@@ -62,8 +69,11 @@ fn receive_message_loop<
     let vehicle = vehicle.as_ref();
     loop {
         match vehicle.recv() {
-            Ok((_header, msg)) => {
-                println!(">>> {:#?} {:#?}", _header, msg);
+            Ok((header, msg)) => {
+                //println!(">>> {:#?} {:#?}", header, msg);
+                if let Err(error) = channel.send((header, msg)) {
+                    println!("Failed to send message though channel: {:#?}", error);
+                }
             }
             Err(error) => {
                 println!("Recv error: {:?}", error);
@@ -97,7 +107,7 @@ fn heartbeat_loop<M: mavlink::Message + From<mavlink::common::MavMessage>>(
 pub fn heartbeat_message() -> mavlink::common::MavMessage {
     mavlink::common::MavMessage::HEARTBEAT(mavlink::common::HEARTBEAT_DATA {
         custom_mode: 0,
-        mavtype: mavlink::common::MavType::MAV_TYPE_QUADROTOR, // TODO: Move this to something else
+        mavtype: mavlink::common::MavType::MAV_TYPE_GCS,
         autopilot: mavlink::common::MavAutopilot::MAV_AUTOPILOT_ARDUPILOTMEGA,
         base_mode: mavlink::common::MavModeFlag::empty(),
         system_status: mavlink::common::MavState::MAV_STATE_STANDBY,
