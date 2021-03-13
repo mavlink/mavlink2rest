@@ -49,6 +49,7 @@ pub fn command_line_string() -> String {
     return std::env::args().collect::<Vec<String>>().join(" ");
 }
 
+//TODO: Move to the top
 fn get_clap_matches<'a>() -> clap::ArgMatches<'a> {
     let version = format!(
         "{}-{} ({})",

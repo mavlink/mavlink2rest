@@ -1,5 +1,6 @@
 use std::sync::{mpsc, Arc, Mutex};
 
+use log::*;
 use mavlink;
 
 #[derive(Clone)]
@@ -13,6 +14,7 @@ pub struct MAVLinkVehicleHandle<M: mavlink::Message> {
     mavlink_vehicle: Arc<Mutex<MAVLinkVehicle<M>>>,
     heartbeat_thread: std::thread::JoinHandle<()>,
     receive_message_thread: std::thread::JoinHandle<()>,
+    //TODO: Add a channel for errors
     pub thread_rx_channel: std::sync::mpsc::Receiver<(mavlink::MavHeader, M)>,
 }
 
@@ -51,7 +53,7 @@ impl<
     }
 
     pub fn send(&self) -> std::io::Result<()> {
-        unreachable!();
+        unimplemented!();
         //self.mavlink_vehicle.lock().unwrap().vehicle.send()
     }
 }
@@ -70,13 +72,12 @@ fn receive_message_loop<
     loop {
         match vehicle.recv() {
             Ok((header, msg)) => {
-                //println!(">>> {:#?} {:#?}", header, msg);
                 if let Err(error) = channel.send((header, msg)) {
-                    println!("Failed to send message though channel: {:#?}", error);
+                    error!("Failed to send message though channel: {:#?}", error);
                 }
             }
             Err(error) => {
-                println!("Recv error: {:?}", error);
+                error!("Recv error: {:?}", error);
                 if let mavlink::error::MessageReadError::Io(error) = error {
                     if error.kind() == std::io::ErrorKind::UnexpectedEof {
                         // We're probably running a file, time to exit!
@@ -91,15 +92,20 @@ fn receive_message_loop<
 fn heartbeat_loop<M: mavlink::Message + From<mavlink::common::MavMessage>>(
     mavlink_vehicle: Arc<Mutex<MAVLinkVehicle<M>>>,
 ) {
-    let mavlink_vehicle = mavlink_vehicle.as_ref().lock().unwrap();
-    let vehicle = mavlink_vehicle.vehicle.clone();
-    drop(mavlink_vehicle);
-
+    let mut counter: u8 = 0;
     loop {
         std::thread::sleep(std::time::Duration::from_secs(1));
-        println!("sending heartbeat");
-        if let Err(error) = vehicle.as_ref().send_default(&heartbeat_message().into()) {
-            println!("Failed to send heartbeat: {:?}", error);
+        debug!("Sending heartbeat");
+        let header = mavlink::MavHeader {
+            system_id: 1,
+            component_id: 1,
+            sequence: counter,
+        };
+        counter = counter.wrapping_add(1);
+        let mavlink_vehicle = mavlink_vehicle.as_ref().lock().unwrap();
+        let vehicle = mavlink_vehicle.vehicle.clone();
+        if let Err(error) = vehicle.as_ref().send(&header, &heartbeat_message().into()) {
+            error!("Failed to send heartbeat: {:?}", error);
         }
     }
 }
@@ -107,9 +113,9 @@ fn heartbeat_loop<M: mavlink::Message + From<mavlink::common::MavMessage>>(
 pub fn heartbeat_message() -> mavlink::common::MavMessage {
     mavlink::common::MavMessage::HEARTBEAT(mavlink::common::HEARTBEAT_DATA {
         custom_mode: 0,
-        mavtype: mavlink::common::MavType::MAV_TYPE_GCS,
+        mavtype: mavlink::common::MavType::MAV_TYPE_GENERIC,
         autopilot: mavlink::common::MavAutopilot::MAV_AUTOPILOT_ARDUPILOTMEGA,
-        base_mode: mavlink::common::MavModeFlag::empty(),
+        base_mode: mavlink::common::MavModeFlag::default(),
         system_status: mavlink::common::MavState::MAV_STATE_STANDBY,
         mavlink_version: 0x3,
     })
