@@ -18,19 +18,38 @@ pub struct Info {
     service: InfoContent,
 }
 
-pub fn root(req: HttpRequest) -> HttpResponse {
+#[cfg(debug_assertions)]
+fn load_html_file(filename: &str) -> Option<String> {
+    let mut filename = filename;
+    if filename.is_empty() {
+        filename = "index.html";
+    }
+    let file_path = format!("{}/src/html/{}", env!("CARGO_MANIFEST_DIR"), filename);
+    match std::fs::read_to_string(file_path) {
+        Ok(content) => Some(content),
+        Err(_) => None,
+    }
+}
+
+#[cfg(not(debug_assertions))]
+fn load_html_file(filename: &str) -> Option<String> {
     let index = std::include_str!(concat!("html/", "index.html"));
     let vue = std::include_str!(concat!("html/", "vue.js"));
-    let path = match req.match_info().query("filename") {
-        "" | "index.html" => index,
-        "vue.js" => vue,
-        something => {
-            return HttpResponse::NotFound()
-                .content_type("text/plain")
-                .body(format!("Page does not exist: {}", something));
-        }
+    match filename {
+        "" | "index.html" => Some(index),
+        "vue.js" => Some(vue),
+        _ => None,
+    }
+}
+
+pub fn root(req: HttpRequest) -> HttpResponse {
+    if let Some(content) = load_html_file(req.match_info().query("filename")) {
+        return HttpResponse::Ok().content_type("text/html").body(content);
     };
-    HttpResponse::Ok().content_type("text/html").body(path)
+
+    return HttpResponse::NotFound()
+        .content_type("text/plain")
+        .body("File does not exist");
 }
 
 pub fn info() -> HttpResponse {
