@@ -17,18 +17,16 @@
                 <ul v-if="data && data.vehicles">
                     <li v-for="(vehicle, vehicle_id) in data.vehicles" :key="vehicle_id">
                         <div> Vehicle ID: {{vehicle_id}} </div>
-                        <!--pre> {{JSON.stringify(vehicle.components, null, 2)}} </pre-->
                         <ul v-if="vehicle && vehicle.components">
                             <li v-for="(component, component_id) in vehicle.components" :key="component_id">
                                 <div> Component ID: {{component_id}} </div>
                                 <ul v-if="component && component.messages">
                                     <li v-for="(message, message_name) in component.messages" :key="message_name">
-                                        <div> {{message_name}} </div>
+                                        <div> <a v-bind:href="'mavlink/' + message_name + '?pretty=true'">mavlink/{{message_name}}</a> ({{message.status.time.frequency.toFixed(2)}}Hz - last update {{formatLastTime(message.status.time.last_update)}}s ago) </div>
                                     </li>
                                 </ul>
                             </li>
                         </ul>
-                        <!--span><a v-bind:href="'mavlink/' + key + '?pretty=true'">mavlink/{{key}}</a> ({{formatHz(obj.message_information.frequency)}}Hz - last update {{formatLastTime(obj.message_information.time.last_message)}}s ago)</span-->
                     </li>
                 </ul>
             </div>
@@ -53,13 +51,9 @@
                     let formatted = authors.split(':').map((author) => {
                         console.log(`author: ${author}`);
                         const { groups: { name } } = /(?<name>.*)\ \<.*\>/gm.exec(author);
-                        console.log(`match: ${name}`)
                         return name;
                     })
                     return formatted.join(', ');
-                },
-                formatHz: function(frequency) {
-                    return frequency ? frequency.toFixed(2) : 0.0.toFixed(2)
                 },
                 formatLastTime: function(last_message) {
                     return ((Date.now() - Date.parse(last_message))/1000).toFixed(3)
