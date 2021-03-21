@@ -36,8 +36,8 @@ fn load_html_file(filename: &str) -> Option<String> {
     let index = std::include_str!(concat!("html/", "index.html"));
     let vue = std::include_str!(concat!("html/", "vue.js"));
     match filename {
-        "" | "index.html" => Some(index),
-        "vue.js" => Some(vue),
+        "" | "index.html" => Some(index.into()),
+        "vue.js" => Some(vue.into()),
         _ => None,
     }
 }
