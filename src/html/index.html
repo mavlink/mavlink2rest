@@ -22,7 +22,7 @@
     </div>
     <script src="vue.js"></script>
     <script>
-        const API = `${window.location.protocol}//0.0.0.0:8088`;
+        const API = `${window.location.protocol}//${window.location.host}`;
         const app = Vue.createApp({
             mounted: function () {
                 this.requestData()
@@ -52,7 +52,6 @@
                 },
                 requestData: async function() {
                     setTimeout(function() {
-                        //fetch(`${window.location.protocol}//${window.location.host}/mavlink`)
                         fetch(`${API}/mavlink`)
                             .then(function(response) {
                                 response.json()
