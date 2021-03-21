@@ -10,10 +10,12 @@
                     Check the <a href="\mavlink">mavlink path</a> for the data<br>
                     You can also check nested paths: <a href="mavlink/HEARTBEAT/mavtype/type">mavlink/HEARTBEAT/mavtype/type</a><br>
                 </div>
+
                 <label>List of available paths:</label>
                 <ul>
                     <li v-for="(obj, key) in data">
-                        <span><a v-bind:href="'mavlink/' + key + '?pretty=true'">mavlink/{{key}}</a> ({{formatHz(obj.message_information.frequency)}}Hz - last update {{formatLastTime(obj.message_information.time.last_message)}}s ago)</span>
+                        <div>{{obj}} {{key}}</div>
+                        <!--span><a v-bind:href="'mavlink/' + key + '?pretty=true'">mavlink/{{key}}</a> ({{formatHz(obj.message_information.frequency)}}Hz - last update {{formatLastTime(obj.message_information.time.last_message)}}s ago)</span-->
                     </li>
                 </ul>
             </div>
