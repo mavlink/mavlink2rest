@@ -5,10 +5,12 @@
         <div style="display: flex; column-gap: 1em">
             <div>
                 <div v-if="info">
-                    {{info.service.name}} - {{info.service.version}} - {{info.service.sha}} - {{info.service.build_date}}<br>
-                    By: {{formatAuthors(info.service.authors)}}<br>
-                    Check the <a href="\mavlink">mavlink path</a> for the data<br>
-                    You can also check nested paths: <a href="mavlink/HEARTBEAT/mavtype/type">mavlink/HEARTBEAT/mavtype/type</a><br>
+                    <div v-once>
+                        {{info.service.name}} - {{info.service.version}} - {{info.service.sha}} - {{info.service.build_date}}<br>
+                        By: {{formatAuthors(info.service.authors)}}<br>
+                        Check the <a href="\mavlink">mavlink path</a> for the data<br>
+                        You can also check nested paths: <a href="mavlink/HEARTBEAT/mavtype/type">mavlink/HEARTBEAT/mavtype/type</a><br>
+                    </div>
                 </div>
 
                 <label>List of available paths:</label>
