@@ -14,9 +14,20 @@
                 </div>
 
                 <label>List of available paths:</label>
-                <ul>
-                    <li v-for="(obj, key) in data">
-                        <div>{{obj}} {{key}}</div>
+                <ul v-if="data && data.vehicles">
+                    <li v-for="(vehicle, vehicle_id) in data.vehicles" :key="vehicle_id">
+                        <div> Vehicle ID: {{vehicle_id}} </div>
+                        <!--pre> {{JSON.stringify(vehicle.components, null, 2)}} </pre-->
+                        <ul v-if="vehicle && vehicle.components">
+                            <li v-for="(component, component_id) in vehicle.components" :key="component_id">
+                                <div> Component ID: {{component_id}} </div>
+                                <ul v-if="component && component.messages">
+                                    <li v-for="(message, message_name) in component.messages" :key="message_name">
+                                        <div> {{message_name}} </div>
+                                    </li>
+                                </ul>
+                            </li>
+                        </ul>
                         <!--span><a v-bind:href="'mavlink/' + key + '?pretty=true'">mavlink/{{key}}</a> ({{formatHz(obj.message_information.frequency)}}Hz - last update {{formatLastTime(obj.message_information.time.last_message)}}s ago)</span-->
                     </li>
                 </ul>
