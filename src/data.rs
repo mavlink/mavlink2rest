@@ -19,46 +19,56 @@ struct MAVLinkVehicleComponentData {
 #[derive(Clone, Debug, Deserialize, Serialize)]
 struct MAVLinkVehicleData {
     id: u8,
-    components: Vec<MAVLinkVehicleComponentData>,
+    components: HashMap<u8, MAVLinkVehicleComponentData>,
 }
 
 #[derive(Clone, Debug, Default, Deserialize, Serialize)]
 pub struct MAVLinkVehiclesData {
-    vehicles: Vec<MAVLinkVehicleData>,
+    vehicles: HashMap<u8, MAVLinkVehicleData>,
 }
 
 impl MAVLinkVehiclesData {
     fn update(&mut self, message: MAVLinkMessage) {
-        if let Some(vehicle) = self
-            .vehicles
-            .iter_mut()
-            .find(|vehicle| vehicle.id == message.header.system_id)
-        {
-            if let Some(component) = vehicle
-                .components
-                .iter_mut()
-                .find(|component| component.id == message.header.component_id)
-            {
-                component
-                    .messages
-                    .insert(message.message.message_name().into(), message.message);
-                return;
-            }
-
-            let mut messages = HashMap::new();
-            messages.insert(message.message.message_name().into(), message.message);
-            vehicle.components.push(MAVLinkVehicleComponentData {
-                id: message.header.component_id,
-                messages,
-            });
-            return;
+        // If vehicle does not exist for us, adds it
+        let vehicle_id = message.header.system_id;
+        if !self.vehicles.contains_key(&vehicle_id) {
+            self.vehicles.insert(
+                message.header.system_id,
+                MAVLinkVehicleData {
+                    id: message.header.system_id,
+                    components: HashMap::new(),
+                },
+            );
         }
 
-        self.vehicles.push(MAVLinkVehicleData {
-            id: message.header.system_id,
-            components: vec![],
-        });
-        self.update(message);
+        // If component does not exist for vehicle, adds it
+        let component_id = message.header.component_id;
+        if !self.vehicles[&vehicle_id]
+            .components
+            .contains_key(&component_id)
+        {
+            self.vehicles
+                .get_mut(&vehicle_id)
+                .unwrap()
+                .components
+                .insert(
+                    component_id,
+                    MAVLinkVehicleComponentData {
+                        id: message.header.component_id,
+                        messages: HashMap::new(),
+                    },
+                );
+        }
+
+        // Add new message for vehicle/component
+        self.vehicles
+            .get_mut(&vehicle_id)
+            .unwrap()
+            .components
+            .get_mut(&component_id)
+            .unwrap()
+            .messages
+            .insert(message.message.message_name().into(), message.message);
     }
 }
 
