@@ -1,83 +1,109 @@
 <html>
-
-<body>
-    <div id="app" style="display: flex; column-gap: 1em">
-        <div style="display: flex; column-gap: 1em">
-            <div>
-                <div v-if="info">
-                    <div v-once>
-                        {{info.service.name}} - {{info.service.version}} - {{info.service.sha}} - {{info.service.build_date}}<br>
-                        By: {{formatAuthors(info.service.authors)}}<br>
-                        Check the <a href="\mavlink">mavlink path</a> for the data<br>
-                        You can also check nested paths: <a href="mavlink/HEARTBEAT/mavtype/type">mavlink/HEARTBEAT/mavtype/type</a><br>
-                    </div>
-                </div>
-
-                <label>List of available paths:</label>
-                <ul v-if="data && data.vehicles">
-                    <li v-for="(vehicle, vehicle_id) in data.vehicles" :key="vehicle_id">
-                        <div> Vehicle ID: {{vehicle_id}} </div>
-                        <ul v-if="vehicle && vehicle.components">
-                            <li v-for="(component, component_id) in vehicle.components" :key="component_id">
-                                <div> Component ID: {{component_id}} </div>
-                                <ul v-if="component && component.messages">
-                                    <li v-for="(message, message_name) in component.messages" :key="message_name">
-                                        <div> <a v-bind:href="'mavlink/' + message_name + '?pretty=true'">mavlink/{{message_name}}</a> ({{message.status.time.frequency.toFixed(2)}}Hz - last update {{formatLastTime(message.status.time.last_update)}}s ago) </div>
-                                    </li>
-                                </ul>
-                            </li>
-                        </ul>
-                    </li>
-                </ul>
+  <body>
+    <div id="app" style="display: flex column-gap: 1em">
+      <div style="display: flex column-gap: 1em">
+        <div>
+          <div v-if="info">
+            <div v-once>
+              {{info.service.name}} - {{info.service.version}} -
+              {{info.service.sha}} - {{info.service.build_date}}<br />
+              By: {{formatAuthors(info.service.authors)}}<br />
+              Check the <a href="\mavlink">mavlink path</a> for the data<br />
+              You can also check nested paths:
+              <a href="mavlink/HEARTBEAT/mavtype/type"
+                >mavlink/HEARTBEAT/mavtype/type</a
+              ><br />
             </div>
+          </div>
+
+          <label>List of available paths:</label>
+          <ul v-if="data && data.vehicles">
+            <li
+              v-for="(vehicle, vehicle_id) in data.vehicles"
+              :key="vehicle_id"
+            >
+              <div>Vehicle ID: {{vehicle_id}}</div>
+              <ul v-if="vehicle && vehicle.components">
+                <li
+                  v-for="(component, component_id) in vehicle.components"
+                  :key="component_id"
+                >
+                  <div>Component ID: {{component_id}}</div>
+                  <ul v-if="component && component.messages">
+                    <li
+                      v-for="(message, message_name) in component.messages"
+                      :key="message_name"
+                    >
+                      <div>
+                        <a
+                          v-bind:href="'mavlink/' + message_name + '?pretty=true'"
+                          >mavlink/{{message_name}}</a
+                        >
+                        ({{message.status.time.frequency.toFixed(2)}}Hz - last
+                        update
+                        {{formatLastTime(message.status.time.last_update)}}s
+                        ago)
+                      </div>
+                    </li>
+                  </ul>
+                </li>
+              </ul>
+            </li>
+          </ul>
         </div>
+      </div>
     </div>
     <script src="vue.js"></script>
     <script>
-        const API = `${window.location.protocol}//${window.location.host}`;
-        const app = Vue.createApp({
-            mounted: function () {
+      /*global Vue*/
+      const API = `${window.location.protocol}//${window.location.host}`
+      const app = Vue.createApp({
+        mounted () {
+          this.requestData()
+
+          fetch(`${API}/info`).then(
+            function (response) {
+              response.json().then((info) => this.info = info)
+            }.bind(this),
+          )
+        },
+        methods: {
+          formatAuthors (authors) {
+            const formatted = authors.split(':').map((author) => {
+              console.log(`author: ${author}`)
+              const {
+                groups: { name },
+              } = /(?<name>.*) <.*>/gm.exec(author)
+              return name
+            })
+            return formatted.join(', ')
+          },
+          formatLastTime (lastMessage) {
+            return ((Date.now() - Date.parse(lastMessage)) / 1000).toFixed(3)
+          },
+          async requestData () {
+            setTimeout(
+              function () {
+                fetch(`${API}/mavlink`).then(
+                  function (response) {
+                    response.json().then((data) => this.data = data)
+                  }.bind(this),
+                )
                 this.requestData()
+              }.bind(this),
+              500,
+            )
+          },
+        },
+        data () {
+          return {
+            data: undefined,
+            info: undefined,
+          }
+        },
+      })
 
-                fetch(`${API}/info`)
-                    .then(function(response) {
-                        response.json()
-                            .then((info) => this.info = info );
-                    }.bind(this));
-            },
-            methods: {
-                formatAuthors: function(authors) {
-                    let formatted = authors.split(':').map((author) => {
-                        console.log(`author: ${author}`);
-                        const { groups: { name } } = /(?<name>.*)\ \<.*\>/gm.exec(author);
-                        return name;
-                    })
-                    return formatted.join(', ');
-                },
-                formatLastTime: function(last_message) {
-                    return ((Date.now() - Date.parse(last_message))/1000).toFixed(3)
-                },
-                requestData: async function() {
-                    setTimeout(function() {
-                        fetch(`${API}/mavlink`)
-                            .then(function(response) {
-                                response.json()
-                                    .then((data) => this.data = data );
-                            }.bind(this));
-                        this.requestData();
-                    }.bind(this), 500);
-                },
-            },
-            data: function() {
-                return {
-                    data: undefined,
-                    info: undefined
-                };
-            }
-        });
-
-        app.mount("#app")
+      app.mount('#app')
     </script>
-</body>
-
+  </body>
 </html>
