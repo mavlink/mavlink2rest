@@ -52,9 +52,19 @@ impl<
         }
     }
 
-    pub fn send(&self) -> std::io::Result<()> {
-        unimplemented!();
-        //self.mavlink_vehicle.lock().unwrap().vehicle.send()
+    pub fn send(&self, header: &mavlink::MavHeader, message: &M) -> std::io::Result<()> {
+        let result = self
+            .mavlink_vehicle
+            .lock()
+            .unwrap()
+            .vehicle
+            .send(&header, &message);
+
+        // Convert from mavlink error to io error
+        match result {
+            Err(mavlink::error::MessageWriteError::Io(error)) => Err(error),
+            Ok(something) => Ok(something),
+        }
     }
 }
 
