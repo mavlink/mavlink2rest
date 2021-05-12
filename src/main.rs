@@ -7,6 +7,7 @@ mod data;
 mod endpoints;
 mod mavlink_vehicle;
 mod server;
+mod websocket_manager;
 
 use log::*;
 
@@ -33,6 +34,7 @@ fn main() -> std::io::Result<()> {
 
         while let Ok((header, message)) = vehicle.thread_rx_channel.recv() {
             debug!("Received: {:#?} {:#?}", header, message);
+            websocket_manager::send(&message);
             data::update((header, message));
         }
     }

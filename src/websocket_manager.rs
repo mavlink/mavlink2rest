@@ -54,6 +54,17 @@ impl WebsocketManager {
     }
 }
 
+lazy_static! {
+    static ref MANAGER: Arc<Mutex<WebsocketManager>> =
+        Arc::new(Mutex::new(WebsocketManager::default()));
+}
+
+pub fn send<M: Serialize + mavlink::Message>(message: &M) {
+    let name = message.message_name();
+    let value = serde_json::to_value(&message).unwrap();
+    MANAGER.lock().unwrap().send(&value, name);
+}
+
 #[derive(Debug)]
 pub struct WebsocketActor {
     server: Arc<Mutex<WebsocketManager>>,
@@ -61,9 +72,9 @@ pub struct WebsocketActor {
 }
 
 impl WebsocketActor {
-    pub fn new(message_filter: String, server: Arc<Mutex<WebsocketManager>>) -> Self {
+    pub fn new(message_filter: String) -> Self {
         Self {
-            server,
+            server: MANAGER.clone(),
             filter: message_filter,
         }
     }

@@ -1,10 +1,14 @@
 use super::endpoints;
 
+use std::sync::{Arc, Mutex};
+
 use actix_web::{
     error::{ErrorBadRequest, JsonPayloadError},
     rt::System,
     web, App, HttpRequest, HttpServer,
 };
+
+use serde::Deserialize;
 
 use log::*;
 
@@ -34,6 +38,7 @@ pub fn run(server_address: &str) {
             )
             .route("/info", web::get().to(endpoints::info))
             .route("/mavlink", web::get().to(endpoints::mavlink))
+            .service(web::resource("/ws/mavlink").route(web::get().to(endpoints::websocket)))
     })
     .bind(server_address)
     .unwrap()

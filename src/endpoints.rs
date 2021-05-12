@@ -1,7 +1,11 @@
-use actix_web::{HttpRequest, HttpResponse};
+use actix_web::{error::Error, web, HttpRequest, HttpResponse};
+use actix_web_actors::ws;
 use serde::{Deserialize, Serialize};
 
+use super::websocket_manager::WebsocketActor;
 use crate::data;
+
+use log::*;
 
 #[derive(Serialize, Debug, Default)]
 pub struct InfoContent {
@@ -16,6 +20,11 @@ pub struct InfoContent {
 pub struct Info {
     version: u32,
     service: InfoContent,
+}
+
+#[derive(Deserialize)]
+pub struct WebsocketQuery {
+    filter: Option<String>,
 }
 
 #[cfg(debug_assertions)]
@@ -73,4 +82,19 @@ pub fn mavlink() -> HttpResponse {
     HttpResponse::Ok()
         .content_type("application/json")
         .body(serde_json::to_string_pretty(&data::messages()).unwrap())
+}
+
+pub async fn websocket(
+    req: HttpRequest,
+    query: web::Query<WebsocketQuery>,
+    stream: web::Payload,
+) -> Result<HttpResponse, actix_web::Error> {
+    let filter = match query.into_inner().filter {
+        Some(filter) => filter,
+        _ => ".*".to_owned(),
+    };
+
+    debug!("New websocket with filter {:#?}", &filter);
+    let resp = ws::start(WebsocketActor::new(filter), &req, stream);
+    resp
 }
