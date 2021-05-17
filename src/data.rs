@@ -54,10 +54,9 @@ impl Status {
 }
 
 #[derive(Clone, Debug, Deserialize, Serialize)]
-
-pub struct MAVLinkMessage {
+pub struct MAVLinkMessage<T> {
     pub header: mavlink::MavHeader,
-    pub message: mavlink::ardupilotmega::MavMessage,
+    pub message: T,
 }
 
 #[derive(Clone, Debug, Deserialize, Serialize)]
@@ -67,7 +66,7 @@ struct MAVLinkMessageStatus {
 }
 
 impl MAVLinkMessageStatus {
-    fn update(&mut self, message: &MAVLinkMessage) {
+    fn update(&mut self, message: &MAVLinkMessage<mavlink::ardupilotmega::MavMessage>) {
         self.message = message.message.clone();
         self.status.update();
     }
@@ -80,7 +79,7 @@ struct MAVLinkVehicleComponentData {
 }
 
 impl MAVLinkVehicleComponentData {
-    fn update(&mut self, message: &MAVLinkMessage) {
+    fn update(&mut self, message: &MAVLinkMessage<mavlink::ardupilotmega::MavMessage>) {
         // If message does not exist, add it
         let message_name = message.message.message_name().into();
         if !self.messages.contains_key(&message_name) {
@@ -108,7 +107,7 @@ struct MAVLinkVehicleData {
 }
 
 impl MAVLinkVehicleData {
-    fn update(&mut self, message: &MAVLinkMessage) {
+    fn update(&mut self, message: &MAVLinkMessage<mavlink::ardupilotmega::MavMessage>) {
         // If component does not exist, adds it
         let component_id = message.header.component_id;
         if !self.components.contains_key(&component_id) {
@@ -135,7 +134,7 @@ pub struct MAVLinkVehiclesData {
 
 impl MAVLinkVehiclesData {
     //TODO: Move message to reference
-    fn update(&mut self, message: MAVLinkMessage) {
+    fn update(&mut self, message: MAVLinkMessage<mavlink::ardupilotmega::MavMessage>) {
         // If vehicle does not exist for us, adds it
         let vehicle_id = message.header.system_id;
         if !self.vehicles.contains_key(&vehicle_id) {

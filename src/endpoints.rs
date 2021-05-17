@@ -33,13 +33,6 @@ pub struct MAVLinkHelperQuery {
     name: String,
 }
 
-//TODO: Use generic MAVLinkMessage
-#[derive(Debug, Deserialize, Serialize)]
-pub struct MAVLinkMessageCommon {
-    pub header: mavlink::MavHeader,
-    pub message: mavlink::common::MavMessage,
-}
-
 #[cfg(debug_assertions)]
 fn load_html_file(filename: &str) -> Option<String> {
     let mut filename = filename;
@@ -115,7 +108,7 @@ pub fn helper_mavlink(_req: HttpRequest, query: web::Query<MAVLinkHelperQuery>) 
         Ok(result) => {
             match result {
                 mavlink::ardupilotmega::MavMessage::common(msg) => {
-                    let result = MAVLinkMessageCommon {
+                    let result = data::MAVLinkMessage {
                         header: mavlink::MavHeader::default(),
                         message: msg,
                     };
