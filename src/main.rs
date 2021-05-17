@@ -9,6 +9,8 @@ mod mavlink_vehicle;
 mod server;
 mod websocket_manager;
 
+use data::MAVLinkMessage;
+use endpoints::MAVLinkMessageCommon;
 use log::*;
 
 fn main() -> std::io::Result<()> {
@@ -28,6 +30,19 @@ fn main() -> std::io::Result<()> {
     );
 
     server::run(cli::server_address());
+
+    websocket_manager::manager()
+        .lock()
+        .unwrap()
+        .new_message_callback = Some(std::sync::Arc::new(move |value: &String| {
+        if let Ok(content @ MAVLinkMessage { .. }) = serde_json::from_str(value) {
+            dbg!("ardupilotmega", content);
+        }
+        if let Ok(content @ MAVLinkMessageCommon { .. }) = serde_json::from_str(value) {
+            dbg!("common", content);
+        }
+        "Ok".into()
+    }));
 
     loop {
         std::thread::sleep(std::time::Duration::from_secs(1));

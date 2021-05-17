@@ -59,6 +59,10 @@ lazy_static! {
         Arc::new(Mutex::new(WebsocketManager::default()));
 }
 
+pub fn manager() -> Arc<Mutex<WebsocketManager>> {
+    MANAGER.clone()
+}
+
 pub fn send<M: Serialize + mavlink::Message>(message: &M) {
     let name = message.message_name();
     let value = serde_json::to_value(&message).unwrap();
