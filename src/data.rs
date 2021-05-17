@@ -54,9 +54,10 @@ impl Status {
 }
 
 #[derive(Clone, Debug, Deserialize, Serialize)]
-struct MAVLinkMessage {
-    header: mavlink::MavHeader,
-    message: mavlink::ardupilotmega::MavMessage,
+
+pub struct MAVLinkMessage {
+    pub header: mavlink::MavHeader,
+    pub message: mavlink::ardupilotmega::MavMessage,
 }
 
 #[derive(Clone, Debug, Deserialize, Serialize)]

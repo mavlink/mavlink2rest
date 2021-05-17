@@ -36,6 +36,7 @@ pub fn run(server_address: &str) {
                 r"/{filename:.*(\.html|\.js)}",
                 web::get().to(endpoints::root),
             )
+            .route("/helper/mavlink", web::get().to(endpoints::helper_mavlink))
             .route("/info", web::get().to(endpoints::info))
             .route("/mavlink", web::get().to(endpoints::mavlink))
             .service(web::resource("/ws/mavlink").route(web::get().to(endpoints::websocket)))
