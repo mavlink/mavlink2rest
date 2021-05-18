@@ -31,13 +31,13 @@
                   <div>Component ID: {{component_id}}</div>
                   <ul v-if="component && component.messages">
                     <li
-                      v-for="(message, message_name) in component.messages"
+                      v-for="(message, message_name) in sort_dict(component.messages)"
                       :key="message_name"
                     >
                       <div>
                         <a
-                          v-bind:href="'mavlink/' + message_name + '?pretty=true'"
-                          >mavlink/{{message_name}}</a
+                          v-bind:href="'mavlink/vehicles/' + vehicle_id + '/components/' + component_id + '/messages/' + message_name"
+                          >{{message_name}}</a
                         >
                         ({{message.status.time.frequency ? message.status.time.frequency.toFixed(2) : 0}}Hz - last
                         update
@@ -68,6 +68,9 @@
           )
         },
         methods: {
+          sort_dict (dict) {
+            return Object.keys(dict).sort().reduce((tempDict, key) => (tempDict[key] = dict[key], tempDict), {});
+          },
           formatAuthors (authors) {
             const formatted = authors.split(':').map((author) => {
               console.log(`author: ${author}`)
