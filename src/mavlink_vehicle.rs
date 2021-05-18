@@ -5,6 +5,8 @@ use mavlink;
 
 use mavlink::MavConnection;
 
+pub type MAVLinkVehicleArcMutex = Arc<Mutex<MAVLinkVehicle<mavlink::ardupilotmega::MavMessage>>>;
+
 #[derive(Clone)]
 pub struct MAVLinkVehicle<M: mavlink::Message> {
     //TODO: Check if Arc<Box can be only Arc or Box

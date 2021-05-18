@@ -28,10 +28,10 @@ fn main() -> std::io::Result<()> {
         mavlink_version,
     );
 
-    server::run(cli::server_address());
-
     let inner_vehicle = vehicle.mavlink_vehicle.clone();
+    server::run(cli::server_address(), &inner_vehicle.clone());
 
+    //TODO: Do inside endpoint and use web::Data ?
     websocket_manager::manager()
         .lock()
         .unwrap()

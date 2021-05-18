@@ -2,8 +2,9 @@ use actix_web::{error::Error, web, HttpRequest, HttpResponse};
 use actix_web_actors::ws;
 use serde::{Deserialize, Serialize};
 
+use super::data;
+use super::mavlink_vehicle::MAVLinkVehicleArcMutex;
 use super::websocket_manager::WebsocketActor;
-use crate::data;
 
 use log::*;
 use mavlink::Message;
@@ -136,6 +137,64 @@ pub fn helper_mavlink(_req: HttpRequest, query: web::Query<MAVLinkHelperQuery>) 
                 .body(parse_query(&content));
         }
     }
+}
+
+pub fn mavlink_post(
+    data: web::Data<MAVLinkVehicleArcMutex>,
+    req: HttpRequest,
+    bytes: web::Bytes,
+) -> HttpResponse {
+    let json_string = match String::from_utf8(bytes.to_vec()) {
+        Ok(content) => content,
+        Err(error) => {
+            return HttpResponse::NotFound()
+                .content_type("application/json")
+                .body(format!(
+                    "Failed to parse input as UTF-8 string: {:?}",
+                    error
+                ));
+        }
+    };
+
+    //TODO: unify error and send
+    if let Ok(content @ data::MAVLinkMessage::<mavlink::ardupilotmega::MavMessage> { .. }) =
+        serde_json::from_str(&json_string)
+    {
+        match data.lock().unwrap().send(&content.header, &content.message) {
+            Ok(_result) => {
+                return HttpResponse::Ok()
+                    .content_type("application/json")
+                    .body("Ok.");
+            }
+            Err(error) => {
+                return HttpResponse::NotFound()
+                    .content_type("application/json")
+                    .body(format!("Failed to send message: {:?}", error));
+            }
+        }
+    } else if let Ok(content @ data::MAVLinkMessage::<mavlink::common::MavMessage> { .. }) =
+        serde_json::from_str(&json_string)
+    {
+        match data.lock().unwrap().send(
+            &content.header,
+            &mavlink::ardupilotmega::MavMessage::common(content.message),
+        ) {
+            Ok(_result) => {
+                return HttpResponse::Ok()
+                    .content_type("application/json")
+                    .body("Ok.");
+            }
+            Err(error) => {
+                return HttpResponse::NotFound()
+                    .content_type("application/json")
+                    .body(format!("Failed to send message: {:?}", error));
+            }
+        }
+    };
+
+    return HttpResponse::NotFound()
+        .content_type("application/json")
+        .body(format!("Failed to parse image."));
 }
 
 pub async fn websocket(

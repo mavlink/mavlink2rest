@@ -1,4 +1,5 @@
 use super::endpoints;
+use super::mavlink_vehicle::MAVLinkVehicleArcMutex;
 
 use std::sync::{Arc, Mutex};
 
@@ -7,8 +8,6 @@ use actix_web::{
     rt::System,
     web, App, HttpRequest, HttpServer,
 };
-
-use serde::Deserialize;
 
 use log::*;
 
@@ -21,15 +20,17 @@ fn json_error_handler(error: JsonPayloadError, _: &HttpRequest) -> actix_web::Er
 }
 
 // Start REST API server with the desired address
-pub fn run(server_address: &str) {
+pub fn run(server_address: &str, mavlink_vehicle: &MAVLinkVehicleArcMutex) {
     let server_address = server_address.to_string();
+    let mavlink_vehicle = mavlink_vehicle.clone();
 
     // Start HTTP server thread
     let _ = System::new("http-server");
-    HttpServer::new(|| {
+    HttpServer::new(move || {
         App::new()
             //TODO Add middle man to print all http events
             .data(web::JsonConfig::default().error_handler(json_error_handler))
+            .data(mavlink_vehicle.clone())
             //TODO: Add cors
             .route("/", web::get().to(endpoints::root))
             .route(
@@ -39,6 +40,7 @@ pub fn run(server_address: &str) {
             .route("/helper/mavlink", web::get().to(endpoints::helper_mavlink))
             .route("/info", web::get().to(endpoints::info))
             .route("/mavlink", web::get().to(endpoints::mavlink))
+            .route("/mavlink", web::post().to(endpoints::mavlink_post))
             .route(r"/mavlink/{path:.*}", web::get().to(endpoints::mavlink))
             .service(web::resource("/ws/mavlink").route(web::get().to(endpoints::websocket)))
     })
