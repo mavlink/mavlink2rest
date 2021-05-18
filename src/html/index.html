@@ -39,7 +39,7 @@
                           v-bind:href="'mavlink/' + message_name + '?pretty=true'"
                           >mavlink/{{message_name}}</a
                         >
-                        ({{message.status.time.frequency.toFixed(2)}}Hz - last
+                        ({{message.status.time.frequency ? message.status.time.frequency.toFixed(2) : 0}}Hz - last
                         update
                         {{formatLastTime(message.status.time.last_update)}}s
                         ago)
