@@ -84,10 +84,11 @@ pub fn info() -> HttpResponse {
         .body(serde_json::to_string_pretty(&info).unwrap())
 }
 
-pub fn mavlink() -> HttpResponse {
+pub fn mavlink(req: HttpRequest) -> HttpResponse {
+    let path = req.match_info().query("path");
     HttpResponse::Ok()
         .content_type("application/json")
-        .body(serde_json::to_string_pretty(&data::messages()).unwrap())
+        .body(data::messages().pointer(path))
 }
 
 pub fn parse_query<T: serde::ser::Serialize>(message: &T) -> String {
