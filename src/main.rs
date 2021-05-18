@@ -30,6 +30,8 @@ fn main() -> std::io::Result<()> {
 
     server::run(cli::server_address());
 
+    let inner_vehicle = vehicle.mavlink_vehicle.clone();
+
     websocket_manager::manager()
         .lock()
         .unwrap()
@@ -37,14 +39,22 @@ fn main() -> std::io::Result<()> {
         if let Ok(content @ MAVLinkMessage::<mavlink::ardupilotmega::MavMessage> { .. }) =
             serde_json::from_str(value)
         {
-            dbg!("ardupilotmega", content);
-        }
-        if let Ok(content @ MAVLinkMessage::<mavlink::common::MavMessage> { .. }) =
+            let result = inner_vehicle
+                .lock()
+                .unwrap()
+                .send(&content.header, &content.message);
+            return format!("{:?}", result);
+        } else if let Ok(content @ MAVLinkMessage::<mavlink::common::MavMessage> { .. }) =
             serde_json::from_str(value)
         {
-            dbg!("common", content);
-        }
-        "Ok".into()
+            let result = inner_vehicle.lock().unwrap().send(
+                &content.header,
+                &mavlink::ardupilotmega::MavMessage::common(content.message),
+            );
+            return format!("{:?}", result);
+        };
+
+        return "Could not convert input message.".into();
     }));
 
     loop {

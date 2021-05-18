@@ -3,15 +3,29 @@ use std::sync::{mpsc, Arc, Mutex};
 use log::*;
 use mavlink;
 
+use mavlink::MavConnection;
+
 #[derive(Clone)]
 pub struct MAVLinkVehicle<M: mavlink::Message> {
     //TODO: Check if Arc<Box can be only Arc or Box
     vehicle: Arc<Box<dyn mavlink::MavConnection<M> + Sync + Send>>,
 }
 
+impl<M: mavlink::Message> MAVLinkVehicle<M> {
+    pub fn send(&self, header: &mavlink::MavHeader, message: &M) -> std::io::Result<()> {
+        let result = self.vehicle.send(&header, &message);
+
+        // Convert from mavlink error to io error
+        match result {
+            Err(mavlink::error::MessageWriteError::Io(error)) => Err(error),
+            Ok(something) => Ok(something),
+        }
+    }
+}
+
 pub struct MAVLinkVehicleHandle<M: mavlink::Message> {
     //TODO: Check if we can use vehicle here directly
-    mavlink_vehicle: Arc<Mutex<MAVLinkVehicle<M>>>,
+    pub mavlink_vehicle: Arc<Mutex<MAVLinkVehicle<M>>>,
     heartbeat_thread: std::thread::JoinHandle<()>,
     receive_message_thread: std::thread::JoinHandle<()>,
     //TODO: Add a channel for errors
@@ -49,21 +63,6 @@ impl<
                 receive_message_loop(receive_message_mavlink_vehicle, tx_channel);
             }),
             thread_rx_channel: rx_channel,
-        }
-    }
-
-    pub fn send(&self, header: &mavlink::MavHeader, message: &M) -> std::io::Result<()> {
-        let result = self
-            .mavlink_vehicle
-            .lock()
-            .unwrap()
-            .vehicle
-            .send(&header, &message);
-
-        // Convert from mavlink error to io error
-        match result {
-            Err(mavlink::error::MessageWriteError::Io(error)) => Err(error),
-            Ok(something) => Ok(something),
         }
     }
 }
