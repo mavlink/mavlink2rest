@@ -9,7 +9,7 @@ use serde::{Deserialize, Serialize};
 struct Temporal {
     first_update: chrono::DateTime<chrono::Local>,
     last_update: chrono::DateTime<chrono::Local>,
-    counter: u128,
+    counter: i64,
     frequency: f32,
 }
 
