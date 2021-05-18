@@ -9,8 +9,8 @@ import time
 API = "http://0.0.0.0:8088"
 
 def vehicle_mode():
-    response = requests.get(f"{API}/mavlink/HEARTBEAT").json()
-    return response["base_mode"]["bits"]
+    response = requests.get(f"{API}/mavlink/vehicles/1/components/1/messages/HEARTBEAT").json()
+    return response["message"]["base_mode"]["bits"]
 
 def set_arm(arm: int):
     arm_message = {
@@ -73,12 +73,11 @@ assert(response["service"]["name"] == "mavlink2rest"), "Invalid service name."
 assert(len(response["service"]["sha"]) == 7), "Invalid sha length."
 
 print("Test heartbeat..")
-#time.sleep(5)
-response = requests.get(f"{API}/mavlink/HEARTBEAT").json()
+response = requests.get(f"{API}/mavlink/vehicles/1/components/1/messages/HEARTBEAT").json()
 
-assert(response["type"] == "HEARTBEAT"), "Message type is incorrect."
-assert(response["autopilot"]["type"]), "Autopilot type does not exist."
-assert(response["message_information"]["frequency"] > 0.95), "Heartbeat frequency is wrong."
+assert(response["message"]["type"] == "HEARTBEAT"), "Message type is incorrect."
+assert(response["message"]["autopilot"]["type"]), "Autopilot type does not exist."
+assert(response["status"]["time"]["frequency"] > 0.95), "Heartbeat frequency is wrong."
 
 print("Test ARM and DISARM..")
 assert(set_arm(0)), "Fail to send DISARM command"
@@ -89,8 +88,8 @@ time.sleep(1)
 assert((vehicle_mode() & 128) != 0), "Failed to ARM vehicle."
 
 print("Test pretty..")
-response = requests.get(f"{API}/mavlink/HEARTBEAT?pretty=true")
-assert(response.text.count('\n') == 24), "Pretty heartbeat does not look correct."
+response = requests.get(f"{API}/mavlink/vehicles/1/components/1/messages/HEARTBEAT")
+assert(response.text.count('\n') == 26), "Pretty heartbeat does not look correct."
 
 async def test_websocket_fetch_filter():
     print("Test websocket..")
