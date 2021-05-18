@@ -149,6 +149,25 @@ impl MAVLinkVehiclesData {
 
         self.vehicles.get_mut(&vehicle_id).unwrap().update(&message);
     }
+
+    pub fn pointer(&self, path: &str) -> String {
+        let path = format!("/{}", path);
+        if path == "/" {
+            return serde_json::to_string_pretty(self).unwrap();
+        };
+
+        dbg!(&path);
+
+        if path == "/vehicles" {
+            return serde_json::to_string_pretty(&self.vehicles).unwrap();
+        };
+
+        let value = serde_json::to_value(self).unwrap();
+        return match value.pointer(&path) {
+            Some(content) => serde_json::to_string_pretty(content).unwrap(),
+            None => "None".into(),
+        };
+    }
 }
 
 #[derive(Debug)]
