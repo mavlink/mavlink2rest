@@ -108,8 +108,9 @@ fn heartbeat_loop<M: mavlink::Message + From<mavlink::common::MavMessage>>(
         std::thread::sleep(std::time::Duration::from_secs(1));
         debug!("Sending heartbeat");
         let header = mavlink::MavHeader {
-            system_id: 1,
-            component_id: 1,
+            system_id: 255,
+            // TODO: Wait to update rust-mavlink to the latest MAVLink, version that contains
+            component_id: 194, //mavlink::common::MavComponent::MAV_COMP_ID_ONBOARD_COMPUTER4,
             sequence: counter,
         };
         counter = counter.wrapping_add(1);
