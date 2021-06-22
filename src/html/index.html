@@ -14,8 +14,8 @@
               By: {{formatAuthors(info.service.authors)}}<br />
               Check the <a href="\mavlink">mavlink path</a> for the data<br />
               You can also check nested paths:
-              <a href="/mavlink/vehicles/1/components/1/messages/HEARTBEAT/message/mavtype/type"
-                >/mavlink/vehicles/{system_id}/components/{component_id}/messages/HEARTBEAT/message/mavtype/type</a
+              <a href="mavlink/vehicles/1/components/1/messages/HEARTBEAT/message/mavtype/type"
+                >mavlink/vehicles/{system_id}/components/{component_id}/messages/HEARTBEAT/message/mavtype/type</a
               ><br />
             </div>
           </div>
@@ -60,12 +60,11 @@
     <script src="vue.js"></script>
     <script>
       /*global Vue*/
-      const API = `${window.location.protocol}//${window.location.host}`
       const app = Vue.createApp({
         mounted () {
           this.requestData()
 
-          fetch(`${API}/info`).then(
+          fetch('info').then(
             function (response) {
               response.json().then((info) => this.info = info)
             }.bind(this),
@@ -91,7 +90,7 @@
           async requestData () {
             setTimeout(
               function () {
-                fetch(`${API}/mavlink`).then(
+                fetch('mavlink').then(
                   function (response) {
                     response.json().then((data) => this.data = data)
                   }.bind(this),
