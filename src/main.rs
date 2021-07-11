@@ -44,6 +44,22 @@ fn main() {
                 .default_value("2"),
         )
         .arg(
+            clap::Arg::with_name("system_id")
+                .long("system-id")
+                .value_name("SYSTEM_ID")
+                .help("Sets system ID for this service.")
+                .takes_value(true)
+                .default_value("255"),
+        )
+        .arg(
+            clap::Arg::with_name("component_id")
+                .long("component-id")
+                .value_name("COMPONENT_ID")
+                .help("Sets the component ID for this service, for more information, check: https://mavlink.io/en/messages/common.html#MAV_COMPONENT")
+                .takes_value(true)
+                .default_value("0"),
+        )
+        .arg(
             clap::Arg::with_name("verbose")
                 .short("v")
                 .long("verbose")
@@ -57,6 +73,17 @@ fn main() {
     let server_string = matches.value_of("server").unwrap();
     let connection_string = matches.value_of("connect").unwrap();
 
+    let system_id = matches
+        .value_of("system_id")
+        .unwrap()
+        .parse::<u8>()
+        .expect("System ID should be a value between 1-255.");
+    let component_id = matches
+        .value_of("component_id")
+        .unwrap()
+        .parse::<u8>()
+        .expect("Component ID should be a value between 1-255.");
+
     let mavlink_version = match mavlink_version {
         "1" => mavlink::MavlinkVersion::V1,
         "2" => mavlink::MavlinkVersion::V2,
@@ -64,6 +91,8 @@ fn main() {
     };
 
     let mut vehicle = Vehicle::new(connection_string, mavlink_version, verbose);
+    vehicle.set_system_id(system_id);
+    vehicle.set_component_id(component_id);
     vehicle.run();
 
     let inner_vehicle = Arc::clone(&vehicle.inner);
