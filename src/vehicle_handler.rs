@@ -17,6 +17,7 @@ pub struct InnerVehicle {
         >,
     >,
     pub messages: Arc<Mutex<serde_json::value::Value>>,
+    header: Arc<Mutex<mavlink::MavHeader>>,
     verbose: Arc<bool>,
 }
 
@@ -38,9 +39,24 @@ impl Vehicle {
             inner: Arc::new(Mutex::new(InnerVehicle {
                 channel: Arc::new(mavlink_communication),
                 messages: Arc::new(Mutex::new(json!({"mavlink":{}}))),
+                header: Arc::new(Mutex::new(mavlink::MavHeader::default())),
                 verbose: Arc::new(verbose),
             })),
         }
+    }
+
+    pub fn set_system_id(&mut self, system_id: u8) {
+        self.inner.lock().unwrap().header.lock().unwrap().system_id = system_id;
+    }
+
+    pub fn set_component_id(&mut self, component_id: u8) {
+        self.inner
+            .lock()
+            .unwrap()
+            .header
+            .lock()
+            .unwrap()
+            .component_id = component_id;
     }
 
     pub fn run(&mut self) {
@@ -48,15 +64,19 @@ impl Vehicle {
         let inner = inner.lock().unwrap();
         InnerVehicle::heartbeat_loop(&inner);
         InnerVehicle::parser_loop(&inner);
-        let _ = inner.channel.send_default(&InnerVehicle::request_stream());
+        let _ = inner.channel.send(
+            &inner.header.lock().unwrap(),
+            &InnerVehicle::request_stream(),
+        );
     }
 }
 
 impl InnerVehicle {
     fn heartbeat_loop(inner: &InnerVehicle) {
         let vehicle = inner.channel.clone();
+        let header = inner.header.clone();
         thread::spawn(move || loop {
-            let res = vehicle.send_default(&InnerVehicle::heartbeat_message());
+            let res = vehicle.send(&header.lock().unwrap(), &InnerVehicle::heartbeat_message());
             if res.is_err() {
                 println!("Failed to send heartbeat");
             }
