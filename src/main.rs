@@ -23,9 +23,12 @@ fn main() -> std::io::Result<()> {
         _ => panic!("Invalid mavlink version."),
     };
 
+    let (system_id, component_id) = cli::mavlink_system_and_component_id();
     let vehicle = mavlink_vehicle::MAVLinkVehicleHandle::<mavlink::ardupilotmega::MavMessage>::new(
         cli::mavlink_connection_string(),
         mavlink_version,
+        system_id,
+        component_id,
     );
 
     let inner_vehicle = vehicle.mavlink_vehicle.clone();

@@ -11,6 +11,7 @@ pub type MAVLinkVehicleArcMutex = Arc<Mutex<MAVLinkVehicle<mavlink::ardupilotmeg
 pub struct MAVLinkVehicle<M: mavlink::Message> {
     //TODO: Check if Arc<Box can be only Arc or Box
     vehicle: Arc<Box<dyn mavlink::MavConnection<M> + Sync + Send>>,
+    header: Arc<Mutex<mavlink::MavHeader>>,
 }
 
 impl<M: mavlink::Message> MAVLinkVehicle<M> {
@@ -35,11 +36,20 @@ pub struct MAVLinkVehicleHandle<M: mavlink::Message> {
 }
 
 impl<M: mavlink::Message> MAVLinkVehicle<M> {
-    fn new(mavlink_connection_string: &str, version: mavlink::MavlinkVersion) -> Self {
+    fn new(
+        mavlink_connection_string: &str,
+        version: mavlink::MavlinkVersion,
+        system_id: u8,
+        component_id: u8,
+    ) -> Self {
         let mut vehicle = mavlink::connect(&mavlink_connection_string).unwrap();
         vehicle.set_protocol_version(version);
+        let mut header = mavlink::MavHeader::default();
+        header.system_id = system_id;
+        header.component_id = component_id;
         Self {
             vehicle: Arc::new(vehicle),
+            header: Arc::new(Mutex::new(header)),
         }
     }
 }
@@ -48,9 +58,14 @@ impl<
         M: 'static + mavlink::Message + std::fmt::Debug + From<mavlink::common::MavMessage> + Send,
     > MAVLinkVehicleHandle<M>
 {
-    pub fn new(connection_string: &str, version: mavlink::MavlinkVersion) -> Self {
+    pub fn new(
+        connection_string: &str,
+        version: mavlink::MavlinkVersion,
+        system_id: u8,
+        component_id: u8,
+    ) -> Self {
         let mavlink_vehicle: Arc<Mutex<MAVLinkVehicle<M>>> = Arc::new(Mutex::new(
-            MAVLinkVehicle::<M>::new(connection_string.clone(), version),
+            MAVLinkVehicle::<M>::new(connection_string.clone(), version, system_id, component_id),
         ));
 
         let heartbeat_mavlink_vehicle = mavlink_vehicle.clone();
@@ -103,22 +118,20 @@ fn receive_message_loop<
 fn heartbeat_loop<M: mavlink::Message + From<mavlink::common::MavMessage>>(
     mavlink_vehicle: Arc<Mutex<MAVLinkVehicle<M>>>,
 ) {
-    let mut counter: u8 = 0;
     loop {
         std::thread::sleep(std::time::Duration::from_secs(1));
         debug!("Sending heartbeat");
-        let header = mavlink::MavHeader {
-            system_id: 255,
-            // TODO: Wait to update rust-mavlink to the latest MAVLink, version that contains
-            component_id: 194, //mavlink::common::MavComponent::MAV_COMP_ID_ONBOARD_COMPUTER4,
-            sequence: counter,
-        };
-        counter = counter.wrapping_add(1);
         let mavlink_vehicle = mavlink_vehicle.as_ref().lock().unwrap();
         let vehicle = mavlink_vehicle.vehicle.clone();
-        if let Err(error) = vehicle.as_ref().send(&header, &heartbeat_message().into()) {
+        if let Err(error) = vehicle.as_ref().send(
+            &mavlink_vehicle.header.lock().unwrap(),
+            &heartbeat_message().into(),
+        ) {
             error!("Failed to send heartbeat: {:?}", error);
         }
+
+        let mut header = mavlink_vehicle.header.lock().unwrap();
+        header.sequence = header.sequence.wrapping_add(1);
     }
 }
 

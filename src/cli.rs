@@ -44,6 +44,26 @@ pub fn mavlink_version() -> u8 {
         .unwrap();
 }
 
+pub fn mavlink_system_and_component_id() -> (u8, u8) {
+    let system_id = MANAGER
+        .as_ref()
+        .clap_matches
+        .value_of("system_id")
+        .unwrap()
+        .parse::<u8>()
+        .expect("System ID should be a value between 1-255.");
+
+    let component_id = MANAGER
+        .as_ref()
+        .clap_matches
+        .value_of("component_id")
+        .unwrap()
+        .parse::<u8>()
+        .expect("Component ID should be a value between 1-255.");
+
+    return (system_id, component_id);
+}
+
 // Return the command line used to start this application
 pub fn command_line_string() -> String {
     return std::env::args().collect::<Vec<String>>().join(" ");
@@ -88,6 +108,22 @@ fn get_clap_matches<'a>() -> clap::ArgMatches<'a> {
                 .takes_value(true)
                 .possible_values(&["1", "2"])
                 .default_value("2"),
+        )
+        .arg(
+            clap::Arg::with_name("system_id")
+                .long("system-id")
+                .value_name("SYSTEM_ID")
+                .help("Sets system ID for this service.")
+                .takes_value(true)
+                .default_value("255"),
+        )
+        .arg(
+            clap::Arg::with_name("component_id")
+                .long("component-id")
+                .value_name("COMPONENT_ID")
+                .help("Sets the component ID for this service, for more information, check: https://mavlink.io/en/messages/common.html#MAV_COMPONENT")
+                .takes_value(true)
+                .default_value("0"),
         )
         .arg(
             clap::Arg::with_name("verbose")
