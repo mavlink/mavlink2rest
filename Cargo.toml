@@ -31,7 +31,7 @@ derivative = "2.1.1"
 lazy_static = "1.4.0"
 log = "0.4"
 env_logger = "0.8"
-mavlink = { version = "0.9", features = [ "ardupilotmega"] }
+mavlink = { version = "0.10.0", features = [ "ardupilotmega"] }
 regex = "1"
 serde = "1.0.115"
 serde_derive = "1.0.115"
