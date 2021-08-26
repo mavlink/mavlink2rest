@@ -120,17 +120,12 @@ fn heartbeat_loop<M: mavlink::Message + From<mavlink::common::MavMessage>>(
 ) {
     loop {
         std::thread::sleep(std::time::Duration::from_secs(1));
-        debug!("Sending heartbeat");
         let mavlink_vehicle = mavlink_vehicle.as_ref().lock().unwrap();
         let vehicle = mavlink_vehicle.vehicle.clone();
-        if let Err(error) = vehicle.as_ref().send(
-            &mavlink_vehicle.header.lock().unwrap(),
-            &heartbeat_message().into(),
-        ) {
+        let mut header = mavlink_vehicle.header.lock().unwrap();
+        if let Err(error) = vehicle.as_ref().send(&header, &heartbeat_message().into()) {
             error!("Failed to send heartbeat: {:?}", error);
         }
-
-        let mut header = mavlink_vehicle.header.lock().unwrap();
         header.sequence = header.sequence.wrapping_add(1);
     }
 }
