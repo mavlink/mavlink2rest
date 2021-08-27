@@ -70,7 +70,7 @@ response = requests.get(f"{API}/info").json()
 
 assert(response["version"] >= 0), "Info version is invalid."
 assert(response["service"]["name"] == "mavlink2rest"), "Invalid service name."
-assert(len(response["service"]["sha"]) == 7), "Invalid sha length."
+assert(len(response["service"]["sha"]) != 0), "Invalid sha length."
 
 print("Test heartbeat..")
 response = requests.get(f"{API}/mavlink/vehicles/1/components/1/messages/HEARTBEAT").json()
