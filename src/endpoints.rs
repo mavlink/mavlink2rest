@@ -1,5 +1,6 @@
 use actix_web::{error::Error, web, HttpRequest, HttpResponse};
 use actix_web_actors::ws;
+use paperclip::actix::{api_v2_operation, Apiv2Schema};
 use serde::{Deserialize, Serialize};
 
 use super::data;
@@ -9,7 +10,7 @@ use super::websocket_manager::WebsocketActor;
 use log::*;
 use mavlink::Message;
 
-#[derive(Serialize, Debug, Default)]
+#[derive(Apiv2Schema, Serialize, Debug, Default)]
 pub struct InfoContent {
     name: String,
     version: String,
@@ -18,18 +19,18 @@ pub struct InfoContent {
     authors: String,
 }
 
-#[derive(Serialize, Debug, Default)]
+#[derive(Apiv2Schema, Serialize, Debug, Default)]
 pub struct Info {
     version: u32,
     service: InfoContent,
 }
 
-#[derive(Deserialize)]
+#[derive(Apiv2Schema, Deserialize)]
 pub struct WebsocketQuery {
     filter: Option<String>,
 }
 
-#[derive(Deserialize)]
+#[derive(Apiv2Schema, Deserialize)]
 pub struct MAVLinkHelperQuery {
     name: String,
 }
