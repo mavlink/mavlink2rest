@@ -1,12 +1,13 @@
 use super::endpoints;
 use super::mavlink_vehicle::MAVLinkVehicleArcMutex;
 
+use paperclip::actix::{web, OpenApiExt};
 use std::sync::{Arc, Mutex};
 
 use actix_web::{
     error::{ErrorBadRequest, JsonPayloadError},
     rt::System,
-    web, App, HttpRequest, HttpServer,
+    App, HttpRequest, HttpServer,
 };
 
 use log::*;
@@ -28,6 +29,8 @@ pub fn run(server_address: &str, mavlink_vehicle: &MAVLinkVehicleArcMutex) {
     let _ = System::new("http-server");
     HttpServer::new(move || {
         App::new()
+            // Record services and routes for paperclip OpenAPI plugin for Actix.
+            .wrap_api()
             //TODO Add middle man to print all http events
             .data(web::JsonConfig::default().error_handler(json_error_handler))
             .data(mavlink_vehicle.clone())
@@ -43,6 +46,8 @@ pub fn run(server_address: &str, mavlink_vehicle: &MAVLinkVehicleArcMutex) {
             .route("/mavlink", web::post().to(endpoints::mavlink_post))
             .route(r"/mavlink/{path:.*}", web::get().to(endpoints::mavlink))
             .service(web::resource("/ws/mavlink").route(web::get().to(endpoints::websocket)))
+            .with_json_spec_at("/docs")
+            .build()
     })
     .bind(server_address)
     .unwrap()

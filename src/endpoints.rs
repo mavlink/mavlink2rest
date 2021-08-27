@@ -1,5 +1,10 @@
-use actix_web::{error::Error, web, HttpRequest, HttpResponse};
+use actix_web::{
+    error::Error,
+    web::{self, Json},
+    HttpRequest, HttpResponse,
+};
 use actix_web_actors::ws;
+use paperclip::actix::{api_v2_operation, Apiv2Schema};
 use serde::{Deserialize, Serialize};
 
 use super::data;
@@ -9,28 +14,36 @@ use super::websocket_manager::WebsocketActor;
 use log::*;
 use mavlink::Message;
 
-#[derive(Serialize, Debug, Default)]
+#[derive(Apiv2Schema, Serialize, Debug, Default)]
 pub struct InfoContent {
+    /// Name of the program
     name: String,
+    /// Version/tag
     version: String,
+    /// Git SHA
     sha: String,
     build_date: String,
+    /// Authors name
     authors: String,
 }
 
-#[derive(Serialize, Debug, Default)]
+#[derive(Apiv2Schema, Serialize, Debug, Default)]
 pub struct Info {
+    /// Version of the REST API
     version: u32,
+    /// Service information
     service: InfoContent,
 }
 
-#[derive(Deserialize)]
+#[derive(Apiv2Schema, Deserialize)]
 pub struct WebsocketQuery {
+    /// Regex filter to selected the desired MAVLink messages by name
     filter: Option<String>,
 }
 
-#[derive(Deserialize)]
+#[derive(Apiv2Schema, Deserialize)]
 pub struct MAVLinkHelperQuery {
+    /// MAVLink message name, possible options are here: https://docs.rs/mavlink/0.10.0/mavlink/#modules
     name: String,
 }
 
@@ -68,7 +81,9 @@ pub fn root(req: HttpRequest) -> HttpResponse {
         .body("File does not exist");
 }
 
-pub fn info() -> HttpResponse {
+#[api_v2_operation]
+/// Provides information about the API and this program
+pub async fn info() -> Json<Info> {
     let info = Info {
         version: 0,
         service: InfoContent {
@@ -80,11 +95,11 @@ pub fn info() -> HttpResponse {
         },
     };
 
-    HttpResponse::Ok()
-        .content_type("application/json")
-        .body(serde_json::to_string_pretty(&info).unwrap())
+    Json(info)
 }
 
+#[api_v2_operation]
+/// Provides an object containing all MAVLink messages received by the service
 pub fn mavlink(req: HttpRequest) -> HttpResponse {
     let path = req.match_info().query("path");
     HttpResponse::Ok()
@@ -98,6 +113,8 @@ pub fn parse_query<T: serde::ser::Serialize>(message: &T) -> String {
     serde_json::to_string_pretty(&message).unwrap_or(error_message)
 }
 
+#[api_v2_operation]
+/// Returns a MAVLink message matching the given message name
 pub fn helper_mavlink(_req: HttpRequest, query: web::Query<MAVLinkHelperQuery>) -> HttpResponse {
     let message_name = query.into_inner().name;
 
@@ -139,6 +156,8 @@ pub fn helper_mavlink(_req: HttpRequest, query: web::Query<MAVLinkHelperQuery>) 
     }
 }
 
+#[api_v2_operation]
+/// Send a MAVLink message for the desired vehicle
 pub fn mavlink_post(
     data: web::Data<MAVLinkVehicleArcMutex>,
     req: HttpRequest,
@@ -197,6 +216,8 @@ pub fn mavlink_post(
         .body(format!("Failed to parse image."));
 }
 
+#[api_v2_operation]
+/// Websocket used to receive and send MAVLink messages asynchronously
 pub async fn websocket(
     req: HttpRequest,
     query: web::Query<WebsocketQuery>,
