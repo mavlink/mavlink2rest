@@ -1,11 +1,11 @@
 extern crate reqwest;
 extern crate vergen;
 
-use vergen::{generate_cargo_keys, ConstantsFlags};
+use vergen::{vergen, Config};
 
 fn main() {
     // Generate the 'cargo:' key output
-    generate_cargo_keys(ConstantsFlags::all()).expect("Unable to generate the cargo keys!");
+    vergen(Config::default());
 
     // Download vue file
     let vue_url = "https://unpkg.com/vue@3.0.5/dist/vue.global.js";

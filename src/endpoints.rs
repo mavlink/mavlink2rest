@@ -88,9 +88,9 @@ pub async fn info() -> Json<Info> {
         version: 0,
         service: InfoContent {
             name: env!("CARGO_PKG_NAME").into(),
-            version: env!("CARGO_PKG_VERSION").into(),
-            sha: env!("VERGEN_SHA_SHORT").into(),
-            build_date: env!("VERGEN_BUILD_DATE").into(),
+            version: env!("VERGEN_GIT_SEMVER").into(),
+            sha: env!("VERGEN_GIT_SHA").into(),
+            build_date: env!("VERGEN_BUILD_TIMESTAMP").into(),
             authors: env!("CARGO_PKG_AUTHORS").into(),
         },
     };

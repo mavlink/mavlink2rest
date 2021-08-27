@@ -10,7 +10,7 @@
           <div v-if="info">
             <div v-once>
               {{info.service.name}} - {{info.service.version}} -
-              {{info.service.sha}} - {{info.service.build_date}}<br />
+              {{info.service.sha.substring(0, 7)}} - {{info.service.build_date.substring(0, 10)}}<br/>
               By: {{formatAuthors(info.service.authors)}}<br />
               Check the <a href="\mavlink">mavlink path</a> for the data<br />
               You can also check nested paths:

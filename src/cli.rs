@@ -72,10 +72,9 @@ pub fn command_line_string() -> String {
 //TODO: Move to the top
 fn get_clap_matches<'a>() -> clap::ArgMatches<'a> {
     let version = format!(
-        "{}-{} ({})",
-        env!("CARGO_PKG_VERSION"),
-        env!("VERGEN_SHA_SHORT"),
-        env!("VERGEN_BUILD_DATE")
+        "{} ({})",
+        env!("VERGEN_GIT_SEMVER"),
+        env!("VERGEN_BUILD_TIMESTAMP")
     );
 
     let matches = clap::App::new(env!("CARGO_PKG_NAME"))
