@@ -59,7 +59,7 @@ OPTIONS:
     * http://0.0.0.0:8088/mavlink/ATTITUDE
     * http://0.0.0.0:8088/mavlink/ATTITUDE/roll
     * http://0.0.0.0:8088/mavlink/ATTITUDE/message_information/time/last_message
-      * Any MAVLink message will contain a normal message definition, as described in `GET /helper/message/<MESSAGE_NAME>`, and a **message_information** structure defined as:
+      * Any MAVLink message will contain a normal message definition, as described in `GET /helper/mavlink?name=<MESSAGE_NAME>`, and a **message_information** structure defined as:
           ```js
           "message_information": {
               "counter": 0, // Number of messages received
@@ -73,11 +73,11 @@ OPTIONS:
   * `POST /mavlink`. Sends the message to a specific vehicle.
     * For more information about the MAVLink message definition: https://mavlink.io/en/guide/serialization.html
     * **header**: Is the mavlink header definition with `system_id`, `component_id` and `sequence`.
-    * **message**: A valid mavlink [message](https://mavlink.io/en/messages/common.html), for more information check `GET /helper/message/<MESSAGE_NAME>`.
+    * **message**: A valid mavlink [message](https://mavlink.io/en/messages/common.html), for more information check `GET /helper/mavlink?name=<MESSAGE_NAME>`.
       * Check [ARM/DISARM example](https://github.com/patrickelectric/mavlink2rest#examples).
 
-  * `GET /helper/message/MAVLINK_MESSAGE_NAME`: Helper endpoint to create JSON compatible MAVLink messages, where `MAVLINK_MESSAGE_NAME` is the mavlink message name. E.g:
-    * http://0.0.0.0:8088/helper/message/COMMAND_LONG
+  * `GET /helper/mavlink?name=MAVLINK_MESSAGE_NAME`: Helper endpoint to create JSON compatible MAVLink messages, where `MAVLINK_MESSAGE_NAME` is the mavlink message name. E.g:
+    * http://0.0.0.0:8088//helper/mavlink?name=COMMAND_LONG
       ```js
       {
           "header": {
@@ -163,7 +163,7 @@ OPTIONS:
 
 ##### Get a message structure example:
   ```sh
-  curl --request GET http://0.0.0.0:8088/helper/message/ATTITUDE\?pretty\=true
+  curl --request GET http://0.0.0.0:8088/helper/mavlink?name=ATTITUDE&pretty\=true
   ```
   ```js
   {
@@ -234,7 +234,7 @@ OPTIONS:
   ```
 
 > Note: For any invalid `GET`, you'll receive a 404 response with the error message.
-> Note: The endpoints that allow `GET` and provides a JSON output, also allow the usage of the query parameter `pretty` with a boolean value `true` or `false`, E.g: http://0.0.0.0:8088/helper/message/COMMAND_LONG?pretty=true
+> Note: The endpoints that allow `GET` and provides a JSON output, also allow the usage of the query parameter `pretty` with a boolean value `true` or `false`, E.g: http://0.0.0.0:8088/helper/mavlink?name=COMMAND_LONG&pretty=true
 
 ### Websocket
 
