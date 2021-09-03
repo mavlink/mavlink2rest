@@ -36,6 +36,8 @@ pub fn run(server_address: &str, mavlink_vehicle: &MAVLinkVehicleArcMutex) {
             .data(mavlink_vehicle.clone())
             //TODO: Add cors
             .route("/", web::get().to(endpoints::root))
+            .with_json_spec_at("/docs.json")
+            .with_swagger_ui_at("/docs")
             .route(
                 r"/{filename:.*(\.html|\.js)}",
                 web::get().to(endpoints::root),
@@ -46,7 +48,6 @@ pub fn run(server_address: &str, mavlink_vehicle: &MAVLinkVehicleArcMutex) {
             .route("/mavlink", web::post().to(endpoints::mavlink_post))
             .route(r"/mavlink/{path:.*}", web::get().to(endpoints::mavlink))
             .service(web::resource("/ws/mavlink").route(web::get().to(endpoints::websocket)))
-            .with_json_spec_at("/docs")
             .build()
     })
     .bind(server_address)
