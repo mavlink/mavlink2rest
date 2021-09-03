@@ -32,7 +32,7 @@ lazy_static = "1.4.0"
 log = "0.4"
 env_logger = "0.8"
 mavlink = { version = "0.10.0", features = [ "ardupilotmega", "emit-extensions"] }
-paperclip = { git = "https://github.com/wafflespeanut/paperclip", features = ["actix"] }
+paperclip = { git = "https://github.com/patrickelectric/paperclip", branch = "patrick-swagger", features = ["actix", "swagger-ui"] }
 regex = "1"
 serde = "1.0.115"
 serde_derive = "1.0.115"
