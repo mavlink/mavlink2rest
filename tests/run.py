@@ -94,8 +94,8 @@ assert(response.text.count('\n') == 26), "Pretty heartbeat does not look correct
 async def test_websocket_fetch_filter():
     print("Test websocket..")
     msgs = await start_client(f"{API}/ws/mavlink", 30)
-    assert(len(list(filter(lambda msg: msg["type"] == "HEARTBEAT", msgs))) != 30), "Failed to fetch more than one type of msg."
+    assert(len(list(filter(lambda msg: msg["message"]["type"] == "HEARTBEAT", msgs))) != 30), "Failed to fetch more than one type of msg."
     msgs = await start_client(f"{API}/ws/mavlink?filter=HEARTBEAT", 30)
-    assert(len(list(filter(lambda msg: msg["type"] == "HEARTBEAT", msgs))) == 30), "Filter failed."
+    assert(len(list(filter(lambda msg: msg["message"]["type"] == "HEARTBEAT", msgs))) == 30), "Filter failed."
 
 asyncio.run(test_websocket_fetch_filter())
