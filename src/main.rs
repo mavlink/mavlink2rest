@@ -65,7 +65,10 @@ fn main() -> std::io::Result<()> {
 
         while let Ok((header, message)) = vehicle.thread_rx_channel.recv() {
             debug!("Received: {:#?} {:#?}", header, message);
-            websocket_manager::send(&message);
+            websocket_manager::send(&MAVLinkMessage {
+                header: header,
+                message: message.clone(),
+            });
             data::update((header, message));
         }
     }

@@ -1,3 +1,5 @@
+use crate::MAVLinkMessage;
+use mavlink::Message as MavMessage;
 use std::sync::{Arc, Mutex};
 
 use actix::{Actor, Addr, AsyncContext, Handler, Message, StreamHandler}; //TODO: Check include orders
@@ -63,8 +65,8 @@ pub fn manager() -> Arc<Mutex<WebsocketManager>> {
     MANAGER.clone()
 }
 
-pub fn send<M: Serialize + mavlink::Message>(message: &M) {
-    let name = message.message_name();
+pub fn send(message: &MAVLinkMessage<mavlink::ardupilotmega::MavMessage>) {
+    let name = message.message.message_name();
     let value = serde_json::to_value(&message).unwrap();
     MANAGER.lock().unwrap().send(&value, name);
 }
