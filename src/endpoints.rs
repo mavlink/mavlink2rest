@@ -215,7 +215,9 @@ pub fn mavlink_post(
 
     return HttpResponse::NotFound()
         .content_type("application/json")
-        .body(format!("Failed to parse image."));
+        .body(format!(
+            "Failed to parse message, not a valid MAVLinkMessage."
+        ));
 }
 
 #[api_v2_operation]
