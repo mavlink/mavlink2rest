@@ -175,6 +175,8 @@ pub fn mavlink_post(
         }
     };
 
+    debug!("MAVLink post received: {json_string}");
+
     //TODO: unify error and send
     if let Ok(content @ data::MAVLinkMessage::<mavlink::ardupilotmega::MavMessage> { .. }) =
         serde_json::from_str(&json_string)
