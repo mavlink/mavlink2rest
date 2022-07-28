@@ -133,8 +133,8 @@ fn heartbeat_loop<M: mavlink::Message + From<mavlink::common::MavMessage>>(
 pub fn heartbeat_message() -> mavlink::common::MavMessage {
     mavlink::common::MavMessage::HEARTBEAT(mavlink::common::HEARTBEAT_DATA {
         custom_mode: 0,
-        mavtype: mavlink::common::MavType::MAV_TYPE_GENERIC,
-        autopilot: mavlink::common::MavAutopilot::MAV_AUTOPILOT_ARDUPILOTMEGA,
+        mavtype: mavlink::common::MavType::MAV_TYPE_ONBOARD_CONTROLLER,
+        autopilot: mavlink::common::MavAutopilot::MAV_AUTOPILOT_INVALID,
         base_mode: mavlink::common::MavModeFlag::default(),
         system_status: mavlink::common::MavState::MAV_STATE_STANDBY,
         mavlink_version: 0x3,
