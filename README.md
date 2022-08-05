@@ -191,20 +191,20 @@ OPTIONS:
   curl --request POST http://0.0.0.0:8088/mavlink -H "Content-Type: application/json" --data \
   '{
     "header": {
-      "system_id": 1,
-      "component_id": 1,
+      "system_id": 255,
+      "component_id": 240,
       "sequence": 0
     },
     "message": {
       "type":"COMMAND_LONG",
-      "param1":1.0,
-      "param2":0.0,"param3":0.0,"param4":0.0,"param5":0.0,"param6":0.0,"param7":0.0,
-      "command":{
-        "type":"MAV_CMD_COMPONENT_ARM_DISARM"
+      "param1": 1.0,
+      "param2": 0.0,"param3":0.0,"param4":0.0,"param5":0.0,"param6":0.0,"param7":0.0,
+      "command": {
+        "type": "MAV_CMD_COMPONENT_ARM_DISARM"
       },
-      "target_system":0,
-      "target_component":0,
-      "confirmation":0
+      "target_system": 1,
+      "target_component": 1,
+      "confirmation": 1
     }
   }'
   ```
@@ -215,20 +215,20 @@ OPTIONS:
   curl --request POST http://0.0.0.0:8088/mavlink -H "Content-Type: application/json" --data \
   '{
     "header": {
-      "system_id": 1,
-      "component_id": 1,
+      "system_id": 255,
+      "component_id": 240,
       "sequence": 0
     },
     "message": {
       "type":"COMMAND_LONG",
-      "param1":0.0,
-      "param2":0.0,"param3":0.0,"param4":0.0,"param5":0.0,"param6":0.0,"param7":0.0,
-      "command":{
-        "type":"MAV_CMD_COMPONENT_ARM_DISARM"
+      "param1": 0.0,
+      "param2": 0.0,"param3":0.0,"param4":0.0,"param5":0.0,"param6":0.0,"param7":0.0,
+      "command": {
+        "type": "MAV_CMD_COMPONENT_ARM_DISARM"
       },
-      "target_system":0,
-      "target_component":0,
-      "confirmation":0
+      "target_system": 1,
+      "target_component": 1,
+      "confirmation": 1
     }
   }'
   ```
