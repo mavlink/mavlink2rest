@@ -179,7 +179,7 @@ pub fn mavlink_post(
 
     //TODO: unify error and send
     if let Ok(content @ data::MAVLinkMessage::<mavlink::ardupilotmega::MavMessage> { .. }) =
-        serde_json::from_str(&json_string)
+        json5::from_str(&json_string)
     {
         match data.lock().unwrap().send(&content.header, &content.message) {
             Ok(_result) => {
@@ -194,7 +194,7 @@ pub fn mavlink_post(
             }
         }
     } else if let Ok(content @ data::MAVLinkMessage::<mavlink::common::MavMessage> { .. }) =
-        serde_json::from_str(&json_string)
+        json5::from_str(&json_string)
     {
         match data.lock().unwrap().send(
             &content.header,
