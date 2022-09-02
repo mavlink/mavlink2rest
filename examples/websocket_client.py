@@ -36,16 +36,26 @@ ARGS = argparse.ArgumentParser(
     description="websocket console client for wssrv.py example."
 )
 ARGS.add_argument(
+    "--filter",
+    action="store",
+    dest="filter",
+    default=".*",
+    help="Regex filter or message name used on websocket: ATTITUDE,HEARTBEAT,RAW_IMU",
+)
+ARGS.add_argument(
     "--url",
     action="store",
     dest="url",
-    default="http://0.0.0.0:8088/ws/mavlink?filter=.*",
-    help="Websocket address, follow the format: http://0.0.0.0:8088/ws/mavlink?filter={regex}",
+    default="http://blueos.local:6040",
+    help="Websocket address, follow the format: http://0.0.0.0:8088",
 )
 
 if __name__ == "__main__":
     args = ARGS.parse_args()
 
-    loop = asyncio.get_event_loop()
-    asyncio.Task(start_client(args.url))
-    loop.run_forever()
+    loop = asyncio.new_event_loop()
+    loop.run_until_complete(
+        start_client(
+            args.url + "/ws/mavlink" + f"?filter={args.filter}"
+        )
+    )
