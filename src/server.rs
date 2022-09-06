@@ -2,7 +2,6 @@ use super::endpoints;
 use super::mavlink_vehicle::MAVLinkVehicleArcMutex;
 
 use paperclip::actix::{web, OpenApiExt};
-use std::sync::{Arc, Mutex};
 
 use actix_web::{
     error::{ErrorBadRequest, JsonPayloadError},
