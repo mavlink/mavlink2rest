@@ -1,5 +1,4 @@
 use actix_web::{
-    error::Error,
     web::{self, Json},
     HttpRequest, HttpResponse,
 };
@@ -160,7 +159,7 @@ pub fn helper_mavlink(_req: HttpRequest, query: web::Query<MAVLinkHelperQuery>) 
 /// Send a MAVLink message for the desired vehicle
 pub fn mavlink_post(
     data: web::Data<MAVLinkVehicleArcMutex>,
-    req: HttpRequest,
+    _req: HttpRequest,
     bytes: web::Bytes,
 ) -> HttpResponse {
     let json_string = match String::from_utf8(bytes.to_vec()) {
