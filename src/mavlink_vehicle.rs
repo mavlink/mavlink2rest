@@ -3,8 +3,6 @@ use std::sync::{mpsc, Arc, Mutex};
 use log::*;
 use mavlink;
 
-use mavlink::MavConnection;
-
 pub type MAVLinkVehicleArcMutex = Arc<Mutex<MAVLinkVehicle<mavlink::ardupilotmega::MavMessage>>>;
 
 #[derive(Clone)]
@@ -15,7 +13,7 @@ pub struct MAVLinkVehicle<M: mavlink::Message> {
 }
 
 impl<M: mavlink::Message> MAVLinkVehicle<M> {
-    pub fn send(&self, header: &mavlink::MavHeader, message: &M) -> std::io::Result<(usize)> {
+    pub fn send(&self, header: &mavlink::MavHeader, message: &M) -> std::io::Result<usize> {
         let result = self.vehicle.send(&header, &message);
 
         // Convert from mavlink error to io error
