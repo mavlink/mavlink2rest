@@ -65,6 +65,7 @@ pub fn mavlink_system_and_component_id() -> (u8, u8) {
 }
 
 // Return the command line used to start this application
+#[allow(dead_code)]
 pub fn command_line_string() -> String {
     return std::env::args().collect::<Vec<String>>().join(" ");
 }
