@@ -5,7 +5,7 @@ use vergen::{vergen, Config};
 
 fn main() {
     // Generate the 'cargo:' key output
-    vergen(Config::default());
+    vergen(Config::default()).expect("Something is wrong!");
 
     // Download vue file
     let vue_url = "https://unpkg.com/vue@3.0.5/dist/vue.global.js";
