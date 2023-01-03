@@ -182,6 +182,7 @@ pub fn mavlink_post(
     {
         match data.lock().unwrap().send(&content.header, &content.message) {
             Ok(_result) => {
+                data::update((content.header, content.message));
                 return HttpResponse::Ok()
                     .content_type("application/json")
                     .body("Ok.");
@@ -195,11 +196,14 @@ pub fn mavlink_post(
     } else if let Ok(content @ data::MAVLinkMessage::<mavlink::common::MavMessage> { .. }) =
         json5::from_str(&json_string)
     {
-        match data.lock().unwrap().send(
-            &content.header,
-            &mavlink::ardupilotmega::MavMessage::common(content.message),
-        ) {
+        let content_ardupilotmega = mavlink::ardupilotmega::MavMessage::common(content.message);
+        match data
+            .lock()
+            .unwrap()
+            .send(&content.header, &content_ardupilotmega)
+        {
             Ok(_result) => {
+                data::update((content.header, content_ardupilotmega));
                 return HttpResponse::Ok()
                     .content_type("application/json")
                     .body("Ok.");
