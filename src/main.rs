@@ -46,14 +46,23 @@ fn main() -> std::io::Result<()> {
                 .lock()
                 .unwrap()
                 .send(&content.header, &content.message);
+            if result.is_ok() {
+                data::update((content.header, content.message));
+            }
+
             return format!("{:?}", result);
         } else if let Ok(content @ MAVLinkMessage::<mavlink::common::MavMessage> { .. }) =
             serde_json::from_str(value)
         {
-            let result = inner_vehicle.lock().unwrap().send(
-                &content.header,
-                &mavlink::ardupilotmega::MavMessage::common(content.message),
-            );
+            let content_ardupilotmega = mavlink::ardupilotmega::MavMessage::common(content.message);
+            let result = inner_vehicle
+                .lock()
+                .unwrap()
+                .send(&content.header, &content_ardupilotmega);
+            if result.is_ok() {
+                data::update((content.header, content_ardupilotmega));
+            }
+
             return format!("{:?}", result);
         };
 
