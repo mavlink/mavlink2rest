@@ -29,7 +29,7 @@ pub fn run(server_address: &str, mavlink_vehicle: &MAVLinkVehicleArcMutex) {
     let _ = System::new("http-server");
     HttpServer::new(move || {
         App::new()
-            .wrap(Cors::default())
+            .wrap(Cors::permissive())
             // Record services and routes for paperclip OpenAPI plugin for Actix.
             .wrap_api()
             //TODO Add middle man to print all http events
