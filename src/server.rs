@@ -3,6 +3,7 @@ use super::mavlink_vehicle::MAVLinkVehicleArcMutex;
 
 use paperclip::actix::{web, OpenApiExt};
 
+use actix_cors::Cors;
 use actix_web::{
     error::{ErrorBadRequest, JsonPayloadError},
     rt::System,
@@ -28,6 +29,7 @@ pub fn run(server_address: &str, mavlink_vehicle: &MAVLinkVehicleArcMutex) {
     let _ = System::new("http-server");
     HttpServer::new(move || {
         App::new()
+            .wrap(Cors::default())
             // Record services and routes for paperclip OpenAPI plugin for Actix.
             .wrap_api()
             //TODO Add middle man to print all http events
