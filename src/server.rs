@@ -24,6 +24,7 @@ fn json_error_handler(error: JsonPayloadError, _: &HttpRequest) -> actix_web::Er
 pub fn run(server_address: &str, mavlink_vehicle: &MAVLinkVehicleArcMutex) {
     let server_address = server_address.to_string();
     let mavlink_vehicle = mavlink_vehicle.clone();
+    println!("Server running: http://{server_address}");
 
     // Start HTTP server thread
     let _ = System::new("http-server");
