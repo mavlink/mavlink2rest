@@ -16,7 +16,14 @@
               You can also check nested paths:
               <a href="mavlink/vehicles/1/components/1/messages/HEARTBEAT/message/mavtype/type"
                 >mavlink/vehicles/{system_id}/components/{component_id}/messages/HEARTBEAT/message/mavtype/type</a
-              ><br />
+              ><br /> <br />
+
+              <a href="watcher.html">Watcher</a>
+              is a helper tool where you can check message information in real time.</br>
+              You can use the query parameter 'path' to visualize specific information, like:
+              <a href="watcher.html?path=mavlink/vehicles/1/components/1/messages/HEARTBEAT/message/mavtype/type">
+                watcher.html?path=mavlink/vehicles/1/components/1/messages/HEARTBEAT/message/mavtype/type
+              </a><br/><br/>
             </div>
           </div>
 
@@ -51,12 +58,18 @@
                       <div>
                         <a
                           v-bind:href="'mavlink/vehicles/' + vehicle_id + '/components/' + component_id + '/messages/' + message_name"
-                          >{{message_name}}</a
                         >
+                          {{message_name}}
+                        </a>
+
                         ({{message.status.time.frequency ? message.status.time.frequency.toFixed(2) : 0}}Hz - last
                         update
                         {{formatLastTime(message.status.time.last_update)}}s
                         ago)
+
+                        <a
+                          v-bind:href="'watcher.html?path=mavlink/vehicles/' + vehicle_id + '/components/' + component_id + '/messages/' + message_name"
+                        >watcher</a>
                       </div>
                     </li>
                   </ul>
@@ -67,7 +80,7 @@
         </div>
       </div>
     </div>
-    <script src="vue.js"></script>
+    <script src="vue.global.js"></script>
     <script>
       /*global Vue*/
       const app = Vue.createApp({
