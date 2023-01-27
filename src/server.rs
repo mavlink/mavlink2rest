@@ -41,7 +41,7 @@ pub fn run(server_address: &str, mavlink_vehicle: &MAVLinkVehicleArcMutex) {
             .with_json_spec_at("/docs.json")
             .with_swagger_ui_at("/docs")
             .route(
-                r"/{filename:.*(\.html|\.js)}",
+                r"/{filename:.*(\.html|\.js|\.css)}",
                 web::get().to(endpoints::root),
             )
             .route("/helper/mavlink", web::get().to(endpoints::helper_mavlink))
