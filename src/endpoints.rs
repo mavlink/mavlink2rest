@@ -3,6 +3,7 @@ use actix_web::{
     HttpRequest, HttpResponse,
 };
 use actix_web_actors::ws;
+use include_dir::{include_dir, Dir};
 use paperclip::actix::{api_v2_operation, Apiv2Schema};
 use serde::{Deserialize, Serialize};
 
@@ -12,6 +13,8 @@ use super::websocket_manager::WebsocketActor;
 
 use log::*;
 use mavlink::Message;
+
+static HTML_DIST: Dir<'_> = include_dir!("src/html");
 
 #[derive(Apiv2Schema, Serialize, Debug, Default)]
 pub struct InfoContent {
@@ -46,33 +49,28 @@ pub struct MAVLinkHelperQuery {
     name: String,
 }
 
-#[cfg(debug_assertions)]
 fn load_html_file(filename: &str) -> Option<String> {
-    let mut filename = filename;
-    if filename.is_empty() {
-        filename = "index.html";
+    if let Some(file) = HTML_DIST.get_file(filename) {
+        return Some(file.contents_utf8().unwrap().to_string());
     }
-    let file_path = format!("{}/src/html/{}", env!("CARGO_MANIFEST_DIR"), filename);
-    match std::fs::read_to_string(file_path) {
-        Ok(content) => Some(content),
-        Err(_) => None,
-    }
-}
 
-#[cfg(not(debug_assertions))]
-fn load_html_file(filename: &str) -> Option<String> {
-    let index = std::include_str!(concat!("html/", "index.html"));
-    let vue = std::include_str!(concat!("html/", "vue.js"));
-    match filename {
-        "" | "index.html" => Some(index.into()),
-        "vue.js" => Some(vue.into()),
-        _ => None,
-    }
+    None
 }
 
 pub fn root(req: HttpRequest) -> HttpResponse {
-    if let Some(content) = load_html_file(req.match_info().query("filename")) {
-        return HttpResponse::Ok().content_type("text/html").body(content);
+    let mut filename = req.match_info().query("filename");
+    if filename.is_empty() {
+        filename = "index.html";
+    }
+
+    if let Some(content) = load_html_file(&filename) {
+        let extension = std::path::Path::new(&filename)
+            .extension()
+            .and_then(std::ffi::OsStr::to_str)
+            .unwrap_or("");
+        let mime = actix_files::file_extension_to_mime(extension).to_string();
+
+        return HttpResponse::Ok().content_type(mime).body(content);
     };
 
     return HttpResponse::NotFound()
