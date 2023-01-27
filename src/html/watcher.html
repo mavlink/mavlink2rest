@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>JSON WebSocket Example</title>
+    <link rel="stylesheet" href="github.css">
+    <script src="highlight.min.js"></script>
+    <script src="vue.global.js"></script>
+  </head>
+  <body>
+    <div id="app">
+      <div>Last update: {{time.toLocaleString()}}</div>
+      <div>Message:</div>
+      <pre><code id="json-data"></code></pre>
+    </div>
+  <script>
+    /*global Vue*/
+    let WSAPI = `${window.location.protocol == "https" ? "wss" : "ws"}://${
+      window.location.host.split(":")[0]
+    }:8088`;
+    WSAPI = "ws://192.168.0.46:6040"
+
+    const app = Vue.createApp({
+      mounted() {
+        // mavlink/vehicles/1/components/1/messages/HEARTBEAT/message/mavtype/type
+        const parameters = new URLSearchParams(location.search);
+        this.path = parameters.get("path") ?? ''
+        this.connectWebsocket();
+      },
+      methods: {
+        connectWebsocket() {
+          this.socket = new WebSocket(`${WSAPI}/ws/mavlink`);
+
+          this.socket.onopen = (e) => {
+            console.log("[open] Websocket connection established");
+          };
+
+          this.socket.onmessage = (event) => {
+            const path = this.path.split('/')
+            path.shift() // Remove mavlink string
+            path.shift() // Remove vehicle string
+            let vehicleId = path.shift()
+            vehicleId = vehicleId ? parseInt(vehicleId) : undefined
+            path.shift() // Remove components string
+            let componentId = path.shift()
+            componentId = componentId ? parseInt(componentId) : undefined
+            path.shift() // Remove messages string
+            const messageName = path.shift()
+
+            let jsonData = JSON.parse(event.data);
+
+            if (vehicleId !== undefined && jsonData.header.system_id !== vehicleId) {
+              return
+            }
+            if (componentId !== undefined && jsonData.header.component_id !== componentId) {
+              return
+            }
+
+            if (messageName !== undefined && jsonData.message.type !== messageName) {
+              return
+            }
+            if (path !== []) {
+              // path.prepend('')
+              jsonData = path.reduce((a, b)=> a[b], jsonData)
+            }
+
+            this.time = new Date()
+
+            const jsonString = JSON.stringify(jsonData, null, 2);
+            const jsonCode = document.getElementById("json-data");
+            jsonCode.innerHTML = jsonString;
+            hljs.highlightBlock(jsonCode);
+          };
+
+          this.socket.onclose = (event) => {
+            if (event.wasClean) {
+              console.log(
+                `[close] Websocket connection closed cleanly, code=${event.code} reason=${event.reason}`
+              );
+            } else {
+              // e.g. server process killed or network down
+              // event.code is usually 1006 in this case
+              console.log("[close] Websocket connection died");
+            }
+            setTimeout(this.connectWebsocket, 4000);
+          };
+
+          this.socket.onerror = (error) => {
+            console.log(`[error] Websocket error: ${error.message}`);
+          };
+        },
+      },
+      data() {
+        return {
+          path: '',
+          socket: undefined,
+          time: new Date()
+        };
+      },
+    });
+
+    app.mount("#app");
+  </script>
+  </body>
+</html>
