@@ -26,13 +26,23 @@
               v-for="(vehicle, vehicle_id) in data.vehicles"
               :key="vehicle_id"
             >
-              <div>Vehicle ID: {{vehicle_id}}</div>
+              <div>
+                <a
+                  v-bind:href="'mavlink/vehicles/' + vehicle_id"
+                >
+                  Vehicle ID: {{vehicle_id}}
+                <a/>
+              </div>
               <ul v-if="vehicle && vehicle.components">
                 <li
                   v-for="(component, component_id) in vehicle.components"
                   :key="component_id"
                 >
-                  <div>Component ID: {{component_id}}</div>
+                  <a
+                    v-bind:href="'mavlink/vehicles/' + vehicle_id + '/components/' + component_id"
+                  >
+                    Component ID: {{component_id}}
+                  <a/>
                   <ul v-if="component && component.messages">
                     <li
                       v-for="(message, message_name) in sort_dict(component.messages)"
