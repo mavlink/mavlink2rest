@@ -13,10 +13,8 @@
       <pre><code id="json-data"></code></pre>
     </div>
   <script>
-    let WSAPI = `${window.location.protocol == "https" ? "wss" : "ws"}://${
-      window.location.host.split(":")[0]
-    }:8088`;
-    WSAPI = "ws://192.168.0.46:6040"
+    const path = window.location.pathname.substring(0, window.location.pathname.lastIndexOf('/'))
+    const WSAPI = `ws://${window.location.host}${path}`
 
     const app = Vue.createApp({
       mounted() {
