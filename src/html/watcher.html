@@ -13,7 +13,6 @@
       <pre><code id="json-data"></code></pre>
     </div>
   <script>
-    /*global Vue*/
     let WSAPI = `${window.location.protocol == "https" ? "wss" : "ws"}://${
       window.location.host.split(":")[0]
     }:8088`;
@@ -21,10 +20,9 @@
 
     const app = Vue.createApp({
       mounted() {
-        // mavlink/vehicles/1/components/1/messages/HEARTBEAT/message/mavtype/type
         const parameters = new URLSearchParams(location.search);
         this.path = parameters.get("path") ?? ''
-        this.connectWebsocket();
+        this.connectWebsocket()
       },
       methods: {
         connectWebsocket() {
