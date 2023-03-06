@@ -52,6 +52,8 @@ OPTIONS:
 ### Pages
 * Main webpage: `GET /`
   * Provides information about mavlink2rest and available messages.
+* Swagger: `GET /docs`
+  * Provides information about mavlink2rest endpoints for the REST API.
 
 ### API
 * MAVLink JSON:
