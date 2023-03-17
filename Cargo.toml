@@ -17,6 +17,11 @@ bench = false
 path = "src/main.rs"
 name = "mavlink2rest"
 
+[[bin]]
+bench = false
+path = "src/mavftp.rs"
+name = "mavftp"
+
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
