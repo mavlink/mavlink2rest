@@ -5,7 +5,7 @@
 [![Crate info](https://img.shields.io/crates/v/mavlink2rest.svg)](https://crates.io/crates/mavlink2rest)
 [![Documentation](https://docs.rs/mavlink2rest/badge.svg)](https://docs.rs/mavlink2rest)
 
-`mavlink2rest` creates a REST server that provides mavlink information from a mavlink source.
+`mavlink2rest` is a tool that offers a RESTful API over the MAVLink protocol, facilitating seamless communication between unmanned systems and web applications. The tool supports the ArduPilotMega dialect, iCAROUS, and UAVionix, making it an ideal solution for developers who want to build custom interfaces for unmanned systems.
 
 The current version supports the **ardupilotmega** dialect, that includes **common**, **icarous** and **uavionix**.
 
