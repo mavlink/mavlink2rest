@@ -7,13 +7,6 @@ use std::str;
 
 use num_traits::FromPrimitive;
 
-#[derive(Debug)]
-struct FileInfo {
-    path: String,
-    name: String,
-    size: u64,
-}
-
 fn main() {
     let target_system = 1; // Replace with the target system ID
     let target_component = 0; // Replace with the target component ID
@@ -29,7 +22,7 @@ fn main() {
     header.system_id = 1;
     header.component_id = 0;
 
-    let directory = ".\0".to_string();
+    let path = ".\0".to_string();
 
     // Set the appropriate payload for the "List" operation
     let seq_number: u16 = 1;
@@ -38,7 +31,8 @@ fn main() {
     payload[3] = 3; // OpCode: 3 for "ListDirectory"
     payload[4] = 1; 
     payload[8..12].copy_from_slice(&0u32.to_le_bytes()); // Directory offset
-    payload[12..14].copy_from_slice(directory.as_bytes()); // Directory path to list files from
+    let path_bytes = path.as_bytes();
+    payload[12..12 + path_bytes.len()].copy_from_slice(path_bytes); // Directory path to list files from
 
     let msg = mavlink::common::MavMessage::FILE_TRANSFER_PROTOCOL(
         mavlink::common::FILE_TRANSFER_PROTOCOL_DATA {
@@ -54,7 +48,7 @@ fn main() {
     dbg!("send");
     conn.send(&header, &msg).expect("Failed to send message");
     dbg!("loop");
-    let mut file_list = Vec::new();
+    let mut files = Vec::new();
     while let Ok((header, message)) = conn.recv() {
         if let mavlink::common::MavMessage::FILE_TRANSFER_PROTOCOL(msg) = message {
             let payload = msg.payload;
@@ -81,33 +75,7 @@ fn main() {
 
                         offset += 1;
 
-                        let entry_str = String::from_utf8_lossy(entry);
-                        dbg!(&entry_str);
-                        if ["D.", "D.."].contains(&entry_str.as_ref()) {
-                            continue
-                        }
-
-                        let mut parts = entry_str.split('\t');
-                        let temp_filename = parts.next().unwrap();
-                        let file_type = temp_filename.chars().next().unwrap();
-                        let name = temp_filename.chars().skip(1).collect();
-                        let size = parts.next().map(|s| s.parse().unwrap()).unwrap_or(0);
-
-                        match file_type {
-                            'F' => {
-                                file_list.push(FileInfo {
-                                    path: directory.clone(),
-                                    name,
-                                    size,
-                                });
-                            }
-                            'D' => {
-                                println!("Folder: {}", name);
-                            }
-                            file_type @ _ => {
-                                println!("Missing file type: {}", file_type);
-                            }
-                        }
+                        files.push(parse_directory_entry(&String::from_utf8_lossy(entry)));
                     }
                     dbg!(offset);
                 }
@@ -120,7 +88,7 @@ fn main() {
             }
 
             dbg!("files!");
-            dbg!(&file_list);
+            dbg!(&files);
 
             /*
             // Check if the received message is an ACK (0x80)

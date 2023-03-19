@@ -86,23 +86,19 @@ pub enum EntryType {
     Skip,
 }
 
-fn parse_directory_entry(entry: &str) -> Result<FileInfo, &'static str> {
-    let mut parts = entry.splitn(3, |c| c == '\t' || c == '\0');
+pub fn parse_directory_entry(entry: &str) -> Result<FileInfo, &'static str> {
+    let mut parts = entry.split('\t');
+    let temp_filename = parts.next().unwrap();
+    let file_type = temp_filename.chars().next();
+    let name: String = temp_filename.chars().skip(1).collect();
+    let size = parts.next().map(|s| s.parse().unwrap()).unwrap_or(0);
 
-    let entry_type_char = parts.next().ok_or("Missing entry type")?;
-    let entry_type = match entry_type_char.chars().next() {
+    let entry_type = match file_type {
         Some('F') => EntryType::File,
         Some('D') => EntryType::Directory,
         Some('S') => EntryType::Skip,
         _ => return Err("Invalid entry type"),
     };
-
-    let name = parts.next().ok_or("Missing name")?.to_string();
-    let size = parts
-        .next()
-        .ok_or("Missing size")?
-        .parse::<u32>()
-        .map_err(|_| "Invalid size")?;
 
     Ok(FileInfo {
         entry_type,
