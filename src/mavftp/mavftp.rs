@@ -82,7 +82,7 @@ pub struct FileInfo {
 #[derive(Debug)]
 pub enum EntryType {
     File,
-    Directory,
+    Directory(Option<Box<FileInfo>>),
     Skip,
 }
 
@@ -95,7 +95,7 @@ pub fn parse_directory_entry(entry: &str) -> Result<FileInfo, &'static str> {
 
     let entry_type = match file_type {
         Some('F') => EntryType::File,
-        Some('D') => EntryType::Directory,
+        Some('D') => EntryType::Directory(None),
         Some('S') => EntryType::Skip,
         _ => return Err("Invalid entry type"),
     };
@@ -113,12 +113,12 @@ pub struct MavlinkFtpPayload {
     // Session id for read/write operations (0 - 255)
     pub session: u8,
     // OpCode (id) for commands and ACK/NAK messages (0 - 255)
-    pub opcode: u8,
+    pub opcode: MavlinkFtpOpcode,
     // Depends on OpCode. For Reads/Writes, it's the size of the data transported
     // For NAK, it's the number of bytes used for error information (1 or 2)
     pub size: u8,
     // OpCode (of original message) returned in an ACK or NAK response
-    pub req_opcode: u8,
+    pub req_opcode: MavlinkFtpOpcode,
     // Code to indicate if a burst is complete (1: burst packets complete, 0: more burst packets coming)
     // Only used if req_opcode is BurstReadFile
     pub burst_complete: u8,
@@ -135,18 +135,18 @@ impl MavlinkFtpPayload {
         seq_number: u16,
         session: u8,
         opcode: MavlinkFtpOpcode,
-        size: u8,
         req_opcode: MavlinkFtpOpcode,
         burst_complete: u8,
         offset: u32,
         data: Vec<u8>,
     ) -> Self {
+        dbg!(data.len());
         Self {
             seq_number,
             session,
-            opcode: opcode as u8,
-            size,
-            req_opcode: req_opcode as u8,
+            opcode,
+            size: data.len() as u8,
+            req_opcode,
             burst_complete,
             padding: 0,
             offset,
@@ -160,9 +160,9 @@ impl MavlinkFtpPayload {
 
         bytes.extend_from_slice(&self.seq_number.to_le_bytes());
         bytes.push(self.session);
-        bytes.push(self.opcode);
+        bytes.push(self.opcode as u8);
         bytes.push(self.size);
-        bytes.push(self.req_opcode);
+        bytes.push(self.req_opcode as u8);
         bytes.push(self.burst_complete);
         bytes.push(self.padding);
         bytes.extend_from_slice(&self.offset.to_le_bytes());

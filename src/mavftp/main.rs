@@ -16,40 +16,34 @@ fn main() {
     let mut conn = mavlink::connect(&url).unwrap();
     conn.set_protocol_version(mavlink::MavlinkVersion::V2);
 
-    let mut payload = [0; 249];
-
     let mut header = mavlink::MavHeader::default();
     header.system_id = 1;
     header.component_id = 0;
 
-    let path = ".\0".to_string();
+    let path = ".".to_string();
 
-    // Set the appropriate payload for the "List" operation
-    let seq_number: u16 = 1;
-    payload[0..2].copy_from_slice(&seq_number.to_le_bytes()); // Sequence number
-    payload[2] = 0; // Session ID
-    payload[3] = 3; // OpCode: 3 for "ListDirectory"
-    payload[4] = 1; 
-    payload[8..12].copy_from_slice(&0u32.to_le_bytes()); // Directory offset
-    let path_bytes = path.as_bytes();
-    payload[12..12 + path_bytes.len()].copy_from_slice(path_bytes); // Directory path to list files from
+    let payload = MavlinkFtpPayload::new(
+        1,
+        0,
+        MavlinkFtpOpcode::ListDirectory,
+        MavlinkFtpOpcode::None,
+        0,
+        0,
+        path.as_bytes().to_vec()
+    );
 
     let msg = mavlink::common::MavMessage::FILE_TRANSFER_PROTOCOL(
         mavlink::common::FILE_TRANSFER_PROTOCOL_DATA {
             target_network: 0,
             target_system,
             target_component,
-            payload: payload.into(),
+            payload: payload.to_bytes(),
         },
     );
 
-    let mut buf = [0; 300];
-
-    dbg!("send");
     conn.send(&header, &msg).expect("Failed to send message");
-    dbg!("loop");
     let mut files = Vec::new();
-    while let Ok((header, message)) = conn.recv() {
+    while let Ok((_header, message)) = conn.recv() {
         if let mavlink::common::MavMessage::FILE_TRANSFER_PROTOCOL(msg) = message {
             let payload = msg.payload;
             let opcode = payload[3];
@@ -75,9 +69,10 @@ fn main() {
 
                         offset += 1;
 
-                        files.push(parse_directory_entry(&String::from_utf8_lossy(entry)));
+                        if let Ok(result) = parse_directory_entry(&String::from_utf8_lossy(entry)) {
+                            files.push(result);
+                        }
                     }
-                    dbg!(offset);
                 }
                 MavlinkFtpOpcode::Nak => {
                     let nak_code = MavlinkFtpNak::from_u8(payload[12]).unwrap();
@@ -87,51 +82,7 @@ fn main() {
                 _ => {}
             }
 
-            dbg!("files!");
             dbg!(&files);
-
-            /*
-            // Check if the received message is an ACK (0x80)
-            if opcode == 0x80 {
-                // Extract and print the list of files
-                let file_list: Vec<String> = str::from_utf8(&payload[12..])
-                    .unwrap_or("")
-                    .split("\0")
-                    .map(Into::into)
-                    .collect();
-                let file_list: Vec<&String> =
-                    file_list.iter().filter(|&name| !name.is_empty()).collect();
-                println!("List of files:\n{:?}", file_list);
-
-                break;
-            } else if opcode == 0x81 {
-                // NAK response
-                let error_code = payload[4];
-                let error_description = match error_code {
-                    0 => "None",
-                    1 => "Fail",
-                    2 => {
-                        let errno = payload[5];
-                        println!("FailErrno with error number: {}", errno);
-                        "FailErrno"
-                    }
-                    3 => "InvalidDataSize",
-                    4 => "InvalidSession",
-                    5 => "NoSessionsAvailable",
-                    6 => "EOF",
-                    7 => "UnknownCommand",
-                    8 => "FileExists",
-                    9 => "FileProtected",
-                    10 => "FileNotFound",
-                    _ => "Unknown error",
-                };
-                println!(
-                    "Received NAK with error code {}: {}",
-                    error_code, error_description
-                );
-                break;
-            }
-             */
         }
     }
 }
