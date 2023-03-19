@@ -1,12 +1,25 @@
+mod mavftp;
+use mavftp::*;
+
 use mavlink::MavConnection;
 use std::io::Read;
 use std::str;
+
+use num_traits::FromPrimitive;
+
+#[derive(Debug)]
+struct FileInfo {
+    path: String,
+    name: String,
+    size: u64,
+}
 
 fn main() {
     let target_system = 1; // Replace with the target system ID
     let target_component = 0; // Replace with the target component ID
 
-    let url = "udpout:192.168.0.46:14660";
+    //let url = "udpout:192.168.0.46:14660";
+    let url = "tcpout:0.0.0.0:5760";
     let mut conn = mavlink::connect(&url).unwrap();
     conn.set_protocol_version(mavlink::MavlinkVersion::V2);
 
@@ -16,14 +29,16 @@ fn main() {
     header.system_id = 1;
     header.component_id = 0;
 
+    let directory = ".\0".to_string();
+
     // Set the appropriate payload for the "List" operation
     let seq_number: u16 = 1;
     payload[0..2].copy_from_slice(&seq_number.to_le_bytes()); // Sequence number
     payload[2] = 0; // Session ID
     payload[3] = 3; // OpCode: 3 for "ListDirectory"
-    payload[4] = 1; // OpCode: 3 for "ListDirectory"
+    payload[4] = 1; 
     payload[8..12].copy_from_slice(&0u32.to_le_bytes()); // Directory offset
-    payload[12..14].copy_from_slice(b"/\0"); // Directory path to list files from
+    payload[12..14].copy_from_slice(directory.as_bytes()); // Directory path to list files from
 
     let msg = mavlink::common::MavMessage::FILE_TRANSFER_PROTOCOL(
         mavlink::common::FILE_TRANSFER_PROTOCOL_DATA {
@@ -39,16 +54,75 @@ fn main() {
     dbg!("send");
     conn.send(&header, &msg).expect("Failed to send message");
     dbg!("loop");
-    loop {
-        // dbg!("recv");
-        let (header, message) = conn.recv().expect("Failed to receive message");
-        // println!("Received: {:?}", message);
-
+    let mut file_list = Vec::new();
+    while let Ok((header, message)) = conn.recv() {
         if let mavlink::common::MavMessage::FILE_TRANSFER_PROTOCOL(msg) = message {
             let payload = msg.payload;
             let opcode = payload[3];
             dbg!(&opcode);
 
+            let opcode = MavlinkFtpOpcode::from_u8(opcode).unwrap();
+            match opcode {
+                MavlinkFtpOpcode::Ack => {
+                    let data_size = payload[4] as usize;
+                    let data = &payload[12..12 + data_size];
+                    dbg!(&data.len());
+                    let entries: Vec<&[u8]> = data.split(|&byte| byte == 0).collect();
+
+                    if entries.is_empty() {
+                        break;
+                    }
+
+                    let mut offset = 0;
+                    for entry in entries {
+                        if entry.is_empty() {
+                            continue;
+                        }
+
+                        offset += 1;
+
+                        let entry_str = String::from_utf8_lossy(entry);
+                        dbg!(&entry_str);
+                        if ["D.", "D.."].contains(&entry_str.as_ref()) {
+                            continue
+                        }
+
+                        let mut parts = entry_str.split('\t');
+                        let temp_filename = parts.next().unwrap();
+                        let file_type = temp_filename.chars().next().unwrap();
+                        let name = temp_filename.chars().skip(1).collect();
+                        let size = parts.next().map(|s| s.parse().unwrap()).unwrap_or(0);
+
+                        match file_type {
+                            'F' => {
+                                file_list.push(FileInfo {
+                                    path: directory.clone(),
+                                    name,
+                                    size,
+                                });
+                            }
+                            'D' => {
+                                println!("Folder: {}", name);
+                            }
+                            file_type @ _ => {
+                                println!("Missing file type: {}", file_type);
+                            }
+                        }
+                    }
+                    dbg!(offset);
+                }
+                MavlinkFtpOpcode::Nak => {
+                    let nak_code = MavlinkFtpNak::from_u8(payload[12]).unwrap();
+                    println!("Error: {:#?}", nak_code);
+                    break;
+                }
+                _ => {}
+            }
+
+            dbg!("files!");
+            dbg!(&file_list);
+
+            /*
             // Check if the received message is an ACK (0x80)
             if opcode == 0x80 {
                 // Extract and print the list of files
@@ -89,6 +163,7 @@ fn main() {
                 );
                 break;
             }
+             */
         }
     }
 }
