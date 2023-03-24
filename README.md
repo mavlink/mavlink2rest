@@ -12,12 +12,12 @@ The current version supports the **ardupilotmega** dialect, that includes **comm
 ## Grab it
 ### Downloads :package:
 
-[Continuous builds](https://github.com/patrickelectric/mavlink2rest/releases/tag/master):
-- :computer: [**Windows**](https://github.com/patrickelectric/mavlink2rest/releases/download/master/mavlink2rest-x86_64-pc-windows-msvc.exe)
-- :apple: [**MacOS**](https://github.com/patrickelectric/mavlink2rest/releases/download/master/mavlink2rest-x86_64-apple-darwin)
-- :penguin: [**Linux**](https://github.com/patrickelectric/mavlink2rest/releases/download/master/mavlink2rest-x86_64-unknown-linux-musl)
-- :strawberry: [**Raspberry**](https://github.com/patrickelectric/mavlink2rest/releases/download/master/mavlink2rest-arm-unknown-linux-musleabihf)
-  - [ARMv6 binary](https://github.com/patrickelectric/mavlink2rest/releases/download/master/mavlink2rest-arm-unknown-linux-musleabihf), [ARMv7](https://github.com/patrickelectric/mavlink2rest/releases/download/master/mavlink2rest-armv7-unknown-linux-musleabihf) is also available under the project releases.
+[Latest builds](https://github.com/patrickelectric/mavlink2rest/releases/latest):
+- :computer: [**Windows**](https://github.com/patrickelectric/mavlink2rest/releases/latest/download/mavlink2rest-x86_64-pc-windows-msvc.exe)
+- :apple: [**MacOS**](https://github.com/patrickelectric/mavlink2rest/releases/latest/download/mavlink2rest-x86_64-apple-darwin)
+- :penguin: [**Linux**](https://github.com/patrickelectric/mavlink2rest/releases/latest/download/mavlink2rest-x86_64-unknown-linux-musl)
+- :strawberry: [**Raspberry**](https://github.com/patrickelectric/mavlink2rest/releases/latest/download/mavlink2rest-arm-unknown-linux-musleabihf)
+  - [ARMv6 binary](https://github.com/patrickelectric/mavlink2rest/releases/latest/download/mavlink2rest-arm-unknown-linux-musleabihf), [ARMv7](https://github.com/patrickelectric/mavlink2rest/releases/latest/download/mavlink2rest-armv7-unknown-linux-musleabihf) is also available under the project releases.
 
 For others or different releases, check the [releases menu](https://github.com/patrickelectric/mavlink2rest/releases).
 
