@@ -44,6 +44,7 @@ fn main() {
     let mut controller = Controller::new();
     match args.command {
         MavlinkFTPCommand::ListDirectory { path } => controller.list_directory(path),
+        MavlinkFTPCommand::ReadFile { path } => controller.read_file(path),
         _ => panic!("Unsupported command!")
     }
 

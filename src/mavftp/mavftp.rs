@@ -55,9 +55,10 @@ pub enum MavlinkFtpResponse {
     TerminateSession(u8),
     ResetSessions,
     ListDirectory(Vec<EntryInfo>),
+    
+    //OpenFileRO(u32, u32),
+    //ReadFile(Vec<u8>),
     /*
-    OpenFileRO(u32, u32),
-    ReadFile(Vec<u8>),
     CreateFile(u32),
     WriteFile,
     RemoveFile,
@@ -108,6 +109,7 @@ pub fn parse_directory_entry(entry: &str) -> Result<EntryInfo, &'static str> {
     })
 }
 
+#[derive(Debug)]
 pub struct MavlinkFtpPayload {
     // Sequence number for message (0 - 65535)
     pub seq_number: u16,
