@@ -1,20 +1,27 @@
 mod mavftp;
 use mavftp::*;
 
+mod controller;
+use controller::*;
+
 use mavlink::MavConnection;
 use std::io::Read;
 use std::str;
 
 use num_traits::FromPrimitive;
 
+use std::sync::{mpsc, Arc, Mutex};
+
 fn main() {
     let target_system = 1; // Replace with the target system ID
     let target_component = 0; // Replace with the target component ID
 
-    //let url = "udpout:192.168.0.46:14660";
-    let url = "tcpout:0.0.0.0:5760";
-    let mut conn = mavlink::connect(&url).unwrap();
-    conn.set_protocol_version(mavlink::MavlinkVersion::V2);
+    let url = "udpout:192.168.0.43:14660";
+    //let url = "tcpout:0.0.0.0:5760";
+    let mut vehicle = mavlink::connect(&url).unwrap();
+    vehicle.set_protocol_version(mavlink::MavlinkVersion::V2);
+    let receiver = Arc::new(vehicle);
+    let sender = receiver.clone();
 
     let mut header = mavlink::MavHeader::default();
     header.system_id = 1;
@@ -41,10 +48,16 @@ fn main() {
         },
     );
 
-    conn.send(&header, &msg).expect("Failed to send message");
-    let mut files = Vec::new();
-    while let Ok((_header, message)) = conn.recv() {
+    sender.send(&header, &msg).expect("Failed to send message");
+    // let mut files = Vec::new();
+    let mut controller = Controller::new();
+    while let Ok((_header, message)) = receiver.recv() {
         if let mavlink::common::MavMessage::FILE_TRANSFER_PROTOCOL(msg) = message {
+
+            if let Some(msg) = controller.parse_mavlink_message(&msg) {
+                sender.send(&header, &msg);
+            }
+            /*
             let payload = msg.payload;
             let opcode = payload[3];
             dbg!(&opcode);
@@ -83,6 +96,7 @@ fn main() {
             }
 
             dbg!(&files);
+            */
         }
     }
 }

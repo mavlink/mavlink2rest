@@ -53,7 +53,7 @@ pub enum MavlinkFtpNak {
 pub enum MavlinkFtpResponse {
     TerminateSession(u8),
     ResetSessions,
-    ListDirectory(Vec<FileInfo>),
+    ListDirectory(Vec<EntryInfo>),
     /*
     OpenFileRO(u32, u32),
     ReadFile(Vec<u8>),
@@ -73,7 +73,7 @@ pub enum MavlinkFtpResponse {
 }
 
 #[derive(Debug)]
-pub struct FileInfo {
+pub struct EntryInfo {
     pub entry_type: EntryType,
     pub name: String,
     pub size: u32,
@@ -82,11 +82,11 @@ pub struct FileInfo {
 #[derive(Debug)]
 pub enum EntryType {
     File,
-    Directory(Option<Box<FileInfo>>),
+    Directory(Option<Box<EntryInfo>>),
     Skip,
 }
 
-pub fn parse_directory_entry(entry: &str) -> Result<FileInfo, &'static str> {
+pub fn parse_directory_entry(entry: &str) -> Result<EntryInfo, &'static str> {
     let mut parts = entry.split('\t');
     let temp_filename = parts.next().unwrap();
     let file_type = temp_filename.chars().next();
@@ -100,7 +100,7 @@ pub fn parse_directory_entry(entry: &str) -> Result<FileInfo, &'static str> {
         _ => return Err("Invalid entry type"),
     };
 
-    Ok(FileInfo {
+    Ok(EntryInfo {
         entry_type,
         name,
         size,
