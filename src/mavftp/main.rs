@@ -4,13 +4,7 @@ use mavftp::*;
 mod controller;
 use controller::*;
 
-use mavlink::MavConnection;
-use std::io::Read;
-use std::str;
-
-use num_traits::FromPrimitive;
-
-use std::sync::{mpsc, Arc, Mutex};
+use std::{sync::Arc, thread, time::Duration};
 
 fn main() {
     let target_system = 1; // Replace with the target system ID
@@ -23,33 +17,22 @@ fn main() {
     let receiver = Arc::new(vehicle);
     let sender = receiver.clone();
 
+    thread::spawn({
+        let vehicle = sender.clone();
+        move || loop {
+            let res = vehicle.send_default(&heartbeat_message());
+            if res.is_ok() {
+                thread::sleep(Duration::from_secs(1));
+            } else {
+                println!("send failed: {res:?}");
+            }
+        }
+    });
+
     let mut header = mavlink::MavHeader::default();
     header.system_id = 1;
     header.component_id = 0;
 
-    let path = ".".to_string();
-
-    let payload = MavlinkFtpPayload::new(
-        1,
-        0,
-        MavlinkFtpOpcode::ListDirectory,
-        MavlinkFtpOpcode::None,
-        0,
-        0,
-        path.as_bytes().to_vec(),
-    );
-
-    let msg = mavlink::common::MavMessage::FILE_TRANSFER_PROTOCOL(
-        mavlink::common::FILE_TRANSFER_PROTOCOL_DATA {
-            target_network: 0,
-            target_system,
-            target_component,
-            payload: payload.to_bytes(),
-        },
-    );
-
-    sender.send(&header, &msg).expect("Failed to send message");
-    // let mut files = Vec::new();
     let mut controller = Controller::new();
     while let Ok((_header, message)) = receiver.recv() {
         if let Some(payload) = controller.run() {
@@ -63,50 +46,24 @@ fn main() {
                         payload: payload.to_bytes(),
                     },
                 ),
-            );
+            ).expect("Failed to send message");
+        } else {
+            dbg!("Broke!"); 
+            break;
         }
         if let mavlink::common::MavMessage::FILE_TRANSFER_PROTOCOL(msg) = message {
             controller.parse_mavlink_message(&msg);
-            /*
-            let payload = msg.payload;
-            let opcode = payload[3];
-            dbg!(&opcode);
-
-            let opcode = MavlinkFtpOpcode::from_u8(opcode).unwrap();
-            match opcode {
-                MavlinkFtpOpcode::Ack => {
-                    let data_size = payload[4] as usize;
-                    let data = &payload[12..12 + data_size];
-                    dbg!(&data.len());
-                    let entries: Vec<&[u8]> = data.split(|&byte| byte == 0).collect();
-
-                    if entries.is_empty() {
-                        break;
-                    }
-
-                    let mut offset = 0;
-                    for entry in entries {
-                        if entry.is_empty() {
-                            continue;
-                        }
-
-                        offset += 1;
-
-                        if let Ok(result) = parse_directory_entry(&String::from_utf8_lossy(entry)) {
-                            files.push(result);
-                        }
-                    }
-                }
-                MavlinkFtpOpcode::Nak => {
-                    let nak_code = MavlinkFtpNak::from_u8(payload[12]).unwrap();
-                    println!("Error: {:#?}", nak_code);
-                    break;
-                }
-                _ => {}
-            }
-
-            dbg!(&files);
-            */
         }
     }
+}
+
+pub fn heartbeat_message() -> mavlink::common::MavMessage {
+    mavlink::common::MavMessage::HEARTBEAT(mavlink::common::HEARTBEAT_DATA {
+        custom_mode: 0,
+        mavtype: mavlink::common::MavType::MAV_TYPE_ONBOARD_CONTROLLER,
+        autopilot: mavlink::common::MavAutopilot::MAV_AUTOPILOT_INVALID,
+        base_mode: mavlink::common::MavModeFlag::default(),
+        system_status: mavlink::common::MavState::MAV_STATE_STANDBY,
+        mavlink_version: 0x3,
+    })
 }

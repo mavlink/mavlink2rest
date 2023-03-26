@@ -98,7 +98,7 @@ impl Controller {
                     MavlinkFtpNak::EOF => {
                         // We finished the current scan
                         dbg!(&self.entries);
-                        dbg!("Done!");
+                        self.status = None;
                         return None;
                     }
                     _ => {

@@ -140,7 +140,6 @@ impl MavlinkFtpPayload {
         offset: u32,
         data: Vec<u8>,
     ) -> Self {
-        dbg!(data.len());
         Self {
             seq_number,
             session,
