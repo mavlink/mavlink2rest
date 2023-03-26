@@ -16,8 +16,8 @@ fn main() {
     let target_system = 1; // Replace with the target system ID
     let target_component = 0; // Replace with the target component ID
 
-    let url = "udpout:192.168.0.43:14660";
-    //let url = "tcpout:0.0.0.0:5760";
+    //let url = "udpout:192.168.0.43:14660";
+    let url = "tcpout:0.0.0.0:5760";
     let mut vehicle = mavlink::connect(&url).unwrap();
     vehicle.set_protocol_version(mavlink::MavlinkVersion::V2);
     let receiver = Arc::new(vehicle);
@@ -52,11 +52,11 @@ fn main() {
     // let mut files = Vec::new();
     let mut controller = Controller::new();
     while let Ok((_header, message)) = receiver.recv() {
+        if let Some(controller_msg) = controller.run() {
+            sender.send(&header, &controller_msg);
+        }
         if let mavlink::common::MavMessage::FILE_TRANSFER_PROTOCOL(msg) = message {
-
-            if let Some(msg) = controller.parse_mavlink_message(&msg) {
-                sender.send(&header, &msg);
-            }
+            controller.parse_mavlink_message(&msg);
             /*
             let payload = msg.payload;
             let opcode = payload[3];
