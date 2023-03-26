@@ -60,9 +60,8 @@ impl Controller {
         let opcode = MavlinkFtpOpcode::from_u8(opcode).unwrap();
         match opcode {
             MavlinkFtpOpcode::Ack => {
-                let data_size = payload[4] as usize;
-                let data = &payload[12..12 + data_size];
-                let entries: Vec<&[u8]> = data.split(|&byte| byte == 0).collect();
+                let payload = MavlinkFtpPayload::from_bytes(&payload).unwrap();
+                let entries: Vec<&[u8]> = payload.data.split(|&byte| byte == 0).collect();
 
                 if entries.is_empty() {
                     return None;

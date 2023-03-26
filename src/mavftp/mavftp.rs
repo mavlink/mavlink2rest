@@ -1,5 +1,6 @@
 use num_derive::FromPrimitive;
 use strum_macros::{EnumIter, EnumString};
+use num_traits::FromPrimitive;
 
 #[derive(Debug, Copy, Clone, PartialEq, EnumIter, FromPrimitive)]
 pub enum MavlinkFtpOpcode {
@@ -116,7 +117,7 @@ pub struct MavlinkFtpPayload {
     pub opcode: MavlinkFtpOpcode,
     // Depends on OpCode. For Reads/Writes, it's the size of the data transported
     // For NAK, it's the number of bytes used for error information (1 or 2)
-    pub size: u8,
+    pub size: usize,
     // OpCode (of original message) returned in an ACK or NAK response
     pub req_opcode: MavlinkFtpOpcode,
     // Code to indicate if a burst is complete (1: burst packets complete, 0: more burst packets coming)
@@ -144,7 +145,7 @@ impl MavlinkFtpPayload {
             seq_number,
             session,
             opcode,
-            size: data.len() as u8,
+            size: data.len(),
             req_opcode,
             burst_complete,
             padding: 0,
@@ -160,7 +161,7 @@ impl MavlinkFtpPayload {
         bytes.extend_from_slice(&self.seq_number.to_le_bytes());
         bytes.push(self.session);
         bytes.push(self.opcode as u8);
-        bytes.push(self.size);
+        bytes.push(self.size as u8);
         bytes.push(self.req_opcode as u8);
         bytes.push(self.burst_complete);
         bytes.push(self.padding);
@@ -168,5 +169,23 @@ impl MavlinkFtpPayload {
         bytes.extend_from_slice(&self.data);
 
         bytes
+    }
+
+    pub fn from_bytes(bytes: &[u8]) -> Result<MavlinkFtpPayload, Box<dyn std::error::Error>> {
+        if bytes.len() < 12 {
+            return Err("Insufficient bytes in input array".into());
+        }
+    
+        Ok(MavlinkFtpPayload {
+            seq_number: u16::from_le_bytes([bytes[0], bytes[1]]),
+            session: bytes[2],
+            opcode: MavlinkFtpOpcode::from_u8(bytes[3]).ok_or("Invalid opcode")?,
+            size: bytes[4] as usize,
+            req_opcode: MavlinkFtpOpcode::from_u8(bytes[5]).ok_or("Invalid req_opcode")?,
+            burst_complete: bytes[6],
+            padding: bytes[7],
+            offset: u32::from_le_bytes([bytes[8], bytes[9], bytes[10], bytes[11]]),
+            data: bytes[12..12 + bytes[4] as usize].to_vec(),
+        })
     }
 }
