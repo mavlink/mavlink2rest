@@ -35,9 +35,8 @@ fn main() {
             let res = vehicle.send_default(&heartbeat_message());
             if res.is_ok() {
                 thread::sleep(Duration::from_secs(1));
-            } else {
-                println!("send failed: {res:?}");
             }
+            thread::sleep(Duration::from_secs(1));
         }
     });
 
@@ -48,24 +47,30 @@ fn main() {
         _ => panic!("Unsupported command!")
     }
 
-    while let Ok((_header, message)) = receiver.recv() {
-        if let Some(payload) = controller.run() {
-            sender.send(
-                &header,
-                &mavlink::common::MavMessage::FILE_TRANSFER_PROTOCOL(
-                    mavlink::common::FILE_TRANSFER_PROTOCOL_DATA {
-                        target_network: 0,
-                        target_system,
-                        target_component,
-                        payload: payload.to_bytes(),
-                    },
-                ),
-            ).expect("Failed to send message");
-        } else {
-            break;
-        }
-        if let mavlink::common::MavMessage::FILE_TRANSFER_PROTOCOL(msg) = message {
-            controller.parse_mavlink_message(&msg);
+    loop {
+        while let Ok((_header, message)) = receiver.recv() {
+            if let Some(payload) = controller.run() {
+                sender.send(
+                    &header,
+                    &mavlink::common::MavMessage::FILE_TRANSFER_PROTOCOL(
+                        mavlink::common::FILE_TRANSFER_PROTOCOL_DATA {
+                            target_network: 0,
+                            target_system,
+                            target_component,
+                            payload: payload.to_bytes(),
+                        },
+                    ),
+                ).expect("Failed to send message");
+            }
+
+            if let mavlink::common::MavMessage::FILE_TRANSFER_PROTOCOL(msg) = message {
+                if let Some(msg) = controller.parse_mavlink_message(&msg) {
+                    sender.send(
+                        &header,
+                        &msg,
+                    ).expect("Failed to send message");
+                }
+            }
         }
     }
 }

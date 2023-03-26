@@ -29,6 +29,7 @@ pub struct Controller {
     session: u8,
     entries: Vec<EntryInfo>,
     status: Option<OperationStatus>,
+    waiting: bool,
 }
 
 impl Controller {
@@ -37,6 +38,7 @@ impl Controller {
             session: 0,
             entries: Vec::new(),
             status: None,
+            waiting: false,
         }
     }
 
@@ -52,7 +54,10 @@ impl Controller {
     }
 
     pub fn run(&mut self) -> Option<MavlinkFtpPayload> {
-        dbg!("run!");
+        if self.waiting {
+            return None;
+        }
+        self.waiting = true;
         match &self.status {
             Some(OperationStatus::ScanningFolder(status)) => {
                 return Some(MavlinkFtpPayload::new(
@@ -94,6 +99,7 @@ impl Controller {
     pub fn parse_mavlink_message(
         &mut self, message: &mavlink::common::FILE_TRANSFER_PROTOCOL_DATA,
     ) -> Option<mavlink::common::MavMessage> {
+        self.waiting = false;
         let payload = &message.payload;
         let opcode = payload[3];
 
@@ -101,7 +107,6 @@ impl Controller {
 
         match opcode {
             MavlinkFtpOpcode::Ack => {
-                dbg!("Ack!");
                 let payload = MavlinkFtpPayload::from_bytes(&payload).unwrap();
 
                 match &mut self.status {
@@ -127,6 +132,8 @@ impl Controller {
                         }
 
                         if status.offset != 0 {
+                            dbg!("waiting...");
+                            self.waiting = true;
                             return Some(mavlink::common::MavMessage::FILE_TRANSFER_PROTOCOL(
                                 mavlink::common::FILE_TRANSFER_PROTOCOL_DATA {
                                     target_network: 0,
@@ -172,6 +179,7 @@ impl Controller {
                         status.offset += chunk.len() as u32;
 
                         if status.offset < status.file_size {
+                            self.waiting = true;
                             return Some(mavlink::common::MavMessage::FILE_TRANSFER_PROTOCOL(
                                 mavlink::common::FILE_TRANSFER_PROTOCOL_DATA {
                                     target_network: 0,
