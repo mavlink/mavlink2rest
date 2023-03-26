@@ -1,4 +1,4 @@
-use std::path::PathBuf;
+use std::{path::PathBuf, io::Write};
 
 use crate::mavftp::*;
 use num_traits::FromPrimitive;
@@ -26,6 +26,7 @@ struct ReadingFileStatus {
 }
 
 pub struct Controller {
+    session: u8,
     entries: Vec<EntryInfo>,
     status: Option<OperationStatus>,
 }
@@ -33,6 +34,7 @@ pub struct Controller {
 impl Controller {
     pub fn new() -> Self {
         Self {
+            session: 0,
             entries: Vec::new(),
             status: None,
         }
@@ -49,12 +51,13 @@ impl Controller {
         self.status = Some(OperationStatus::OpeningFile(OpeningFileStatus{path}));
     }
 
-    pub fn run(&self) -> Option<MavlinkFtpPayload> {
+    pub fn run(&mut self) -> Option<MavlinkFtpPayload> {
+        dbg!("run!");
         match &self.status {
             Some(OperationStatus::ScanningFolder(status)) => {
                 return Some(MavlinkFtpPayload::new(
                     1,
-                    0,
+                    self.session,
                     MavlinkFtpOpcode::ListDirectory,
                     MavlinkFtpOpcode::None,
                     0,
@@ -63,10 +66,9 @@ impl Controller {
                 ));
             }
             Some(OperationStatus::OpeningFile(status)) => {
-                dbg!("run!");
                 return Some(MavlinkFtpPayload::new(
                     1,
-                    0,
+                    self.session,
                     MavlinkFtpOpcode::OpenFileRO,
                     MavlinkFtpOpcode::None,
                     0,
@@ -77,7 +79,7 @@ impl Controller {
             Some(OperationStatus::ReadingFile(status)) => {
                 return Some(MavlinkFtpPayload::new(
                     1,
-                    0,
+                    self.session,
                     MavlinkFtpOpcode::ReadFile,
                     MavlinkFtpOpcode::None,
                     0,
@@ -99,8 +101,8 @@ impl Controller {
 
         match opcode {
             MavlinkFtpOpcode::Ack => {
+                dbg!("Ack!");
                 let payload = MavlinkFtpPayload::from_bytes(&payload).unwrap();
-                dbg!(&payload);
 
                 match &mut self.status {
                     Some(OperationStatus::ScanningFolder(status)) => {
@@ -132,7 +134,7 @@ impl Controller {
                                     target_component: 1,
                                     payload: MavlinkFtpPayload::new(
                                         1,
-                                        0,
+                                        self.session,
                                         MavlinkFtpOpcode::ListDirectory,
                                         MavlinkFtpOpcode::None,
                                         0,
@@ -145,7 +147,6 @@ impl Controller {
                         }
                     }
                     Some(OperationStatus::OpeningFile(status)) => {
-                        dbg!("open!");
                         if payload.size != 4 {
                             panic!("Wrong size");
                         }
@@ -169,7 +170,6 @@ impl Controller {
                         let chunk = &payload.data;
                         status.content.extend_from_slice(chunk);
                         status.offset += chunk.len() as u32;
-                        dbg!(&status.offset);
 
                         if status.offset < status.file_size {
                             return Some(mavlink::common::MavMessage::FILE_TRANSFER_PROTOCOL(
@@ -179,7 +179,7 @@ impl Controller {
                                     target_component: 1,
                                     payload: MavlinkFtpPayload::new(
                                         1,
-                                        0,
+                                        self.session,
                                         MavlinkFtpOpcode::ReadFile,
                                         MavlinkFtpOpcode::None,
                                         0,
@@ -190,7 +190,7 @@ impl Controller {
                                 },
                             ));
                         } else {
-                            println!("File content: {:?}", std::str::from_utf8(&status.content));
+                            std::io::stdout().write_all(&status.content).unwrap();
                             self.status = None;
                             return None;
                         }
@@ -207,6 +207,9 @@ impl Controller {
                         // We finished the current operation
                         dbg!(&self.entries);
                         self.status = None;
+                        return None;
+                    }
+                    MavlinkFtpNak::FailErrno => {
                         return None;
                     }
                     _ => {

@@ -62,7 +62,6 @@ fn main() {
                 ),
             ).expect("Failed to send message");
         } else {
-            dbg!("Broke!"); 
             break;
         }
         if let mavlink::common::MavMessage::FILE_TRANSFER_PROTOCOL(msg) = message {
