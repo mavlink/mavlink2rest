@@ -82,7 +82,7 @@ pub struct EntryInfo {
 #[derive(Debug)]
 pub enum EntryType {
     File,
-    Directory(Option<Box<EntryInfo>>),
+    Directory,
     Skip,
 }
 
@@ -95,7 +95,7 @@ pub fn parse_directory_entry(entry: &str) -> Result<EntryInfo, &'static str> {
 
     let entry_type = match file_type {
         Some('F') => EntryType::File,
-        Some('D') => EntryType::Directory(None),
+        Some('D') => EntryType::Directory,
         Some('S') => EntryType::Skip,
         _ => return Err("Invalid entry type"),
     };

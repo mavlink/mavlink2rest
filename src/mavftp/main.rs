@@ -4,14 +4,21 @@ use mavftp::*;
 mod controller;
 use controller::*;
 
+use structopt::StructOpt;
+
+mod cli;
+use cli::*;
+
 use std::{sync::Arc, thread, time::Duration};
 
 fn main() {
     let target_system = 1; // Replace with the target system ID
     let target_component = 0; // Replace with the target component ID
 
+    let args = cli::Opt::from_args();
+
     //let url = "udpout:192.168.0.43:14660";
-    let url = "tcpout:0.0.0.0:5760";
+    let url = args.connection;
     let mut vehicle = mavlink::connect(&url).unwrap();
     vehicle.set_protocol_version(mavlink::MavlinkVersion::V2);
     let receiver = Arc::new(vehicle);
