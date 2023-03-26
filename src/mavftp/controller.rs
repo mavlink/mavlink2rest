@@ -22,8 +22,8 @@ impl Controller {
         }
     }
 
-    pub fn run(self) -> Option<MavlinkFtpPayload> {
-        if let Some(status) = self.status {
+    pub fn run(&self) -> Option<MavlinkFtpPayload> {
+        if let Some(status) = &self.status {
             return Some(MavlinkFtpPayload::new(
                 1,
                 0,
@@ -69,6 +69,25 @@ impl Controller {
                         result.name = format!("{}/{}", status.path, result.name);
                         self.entries.push(result);
                     }
+                }
+
+                if status.offset != 0 {
+                    return Some(mavlink::common::MavMessage::FILE_TRANSFER_PROTOCOL(
+                        mavlink::common::FILE_TRANSFER_PROTOCOL_DATA {
+                            target_network: 0,
+                            target_system: 1,
+                            target_component: 1,
+                            payload: MavlinkFtpPayload::new(
+                                1,
+                                0,
+                                MavlinkFtpOpcode::ListDirectory,
+                                MavlinkFtpOpcode::None,
+                                0,
+                                status.offset as u32,
+                                status.path.as_bytes().to_vec()
+                            ).to_bytes(),
+                        },
+                    ));
                 }
             }
             MavlinkFtpOpcode::Nak => {

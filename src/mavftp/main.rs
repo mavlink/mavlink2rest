@@ -36,7 +36,7 @@ fn main() {
         MavlinkFtpOpcode::None,
         0,
         0,
-        path.as_bytes().to_vec()
+        path.as_bytes().to_vec(),
     );
 
     let msg = mavlink::common::MavMessage::FILE_TRANSFER_PROTOCOL(
@@ -52,8 +52,18 @@ fn main() {
     // let mut files = Vec::new();
     let mut controller = Controller::new();
     while let Ok((_header, message)) = receiver.recv() {
-        if let Some(controller_msg) = controller.run() {
-            sender.send(&header, &controller_msg);
+        if let Some(payload) = controller.run() {
+            sender.send(
+                &header,
+                &mavlink::common::MavMessage::FILE_TRANSFER_PROTOCOL(
+                    mavlink::common::FILE_TRANSFER_PROTOCOL_DATA {
+                        target_network: 0,
+                        target_system: 1,
+                        target_component: 1,
+                        payload: payload.to_bytes(),
+                    },
+                ),
+            );
         }
         if let mavlink::common::MavMessage::FILE_TRANSFER_PROTOCOL(msg) = message {
             controller.parse_mavlink_message(&msg);
