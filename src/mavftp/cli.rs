@@ -8,7 +8,7 @@ pub struct Opt {
     pub connection: String,
 
     #[structopt(subcommand)]
-    pub cmd: MavlinkFTPCommand,
+    pub command: MavlinkFTPCommand,
 }
 
 #[derive(Debug, StructOpt)]
@@ -17,56 +17,49 @@ pub enum MavlinkFTPCommand {
     #[structopt(name = "list")]
     ListDirectory {
         /// Directory path
-        #[structopt(parse(from_os_str), default_value = ".")]
-        path: PathBuf,
+        #[structopt(default_value = ".")]
+        path: String,
     },
     /// Read a file
     #[structopt(name = "read")]
     ReadFile {
         /// File path
-        #[structopt(parse(from_os_str))]
-        path: PathBuf,
+        path: String,
     },
     /// Create a file
     #[structopt(name = "create")]
     CreateFile {
         /// File path
-        #[structopt(parse(from_os_str))]
-        path: PathBuf,
+        path: String,
     },
     /// Write to a file
     #[structopt(name = "write")]
     WriteFile {
         /// File path
-        #[structopt(parse(from_os_str))]
-        path: PathBuf,
+        path: String,
     },
     /// Remove a file
     #[structopt(name = "remove")]
     RemoveFile {
         /// File path
-        #[structopt(parse(from_os_str))]
-        path: PathBuf,
+        path: String,
     },
     /// Create a directory
     #[structopt(name = "mkdir")]
     CreateDirectory {
         /// Directory path
-        #[structopt(parse(from_os_str))]
-        path: PathBuf,
+        path: String,
     },
     /// Remove a directory
     #[structopt(name = "rmdir")]
     RemoveDirectory {
         /// Directory path
-        #[structopt(parse(from_os_str))]
-        path: PathBuf,
+        path: String,
     },
     /// Calculate CRC32 for a file
     #[structopt(name = "crc")]
     CalcFileCRC32 {
         /// File path
-        #[structopt(parse(from_os_str))]
-        path: PathBuf,
+        path: String,
     },
 }

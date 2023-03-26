@@ -1,3 +1,5 @@
+use std::path::PathBuf;
+
 use crate::mavftp::*;
 use num_traits::FromPrimitive;
 
@@ -20,6 +22,13 @@ impl Controller {
                 offset: 0,
             })
         }
+    }
+
+    pub fn list_directory(&mut self, path: String) {
+        self.status = Some(ScanningFolderStatus {
+            path,
+            offset: 0,
+        })
     }
 
     pub fn run(&self) -> Option<MavlinkFtpPayload> {

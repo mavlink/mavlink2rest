@@ -12,15 +12,20 @@ use cli::*;
 use std::{sync::Arc, thread, time::Duration};
 
 fn main() {
-    let target_system = 1; // Replace with the target system ID
-    let target_component = 0; // Replace with the target component ID
+    let target_system = 1;
+    let target_component = 0;
+
+    let mut header = mavlink::MavHeader::default();
+    header.system_id = 1;
+    header.component_id = 0;
 
     let args = cli::Opt::from_args();
 
-    //let url = "udpout:192.168.0.43:14660";
     let url = args.connection;
+
     let mut vehicle = mavlink::connect(&url).unwrap();
     vehicle.set_protocol_version(mavlink::MavlinkVersion::V2);
+
     let receiver = Arc::new(vehicle);
     let sender = receiver.clone();
 
@@ -36,11 +41,12 @@ fn main() {
         }
     });
 
-    let mut header = mavlink::MavHeader::default();
-    header.system_id = 1;
-    header.component_id = 0;
-
     let mut controller = Controller::new();
+    match args.command {
+        MavlinkFTPCommand::ListDirectory { path } => controller.list_directory(path),
+        _ => panic!("Unsupported command!")
+    }
+
     while let Ok((_header, message)) = receiver.recv() {
         if let Some(payload) = controller.run() {
             sender.send(
@@ -48,8 +54,8 @@ fn main() {
                 &mavlink::common::MavMessage::FILE_TRANSFER_PROTOCOL(
                     mavlink::common::FILE_TRANSFER_PROTOCOL_DATA {
                         target_network: 0,
-                        target_system: 1,
-                        target_component: 1,
+                        target_system,
+                        target_component,
                         payload: payload.to_bytes(),
                     },
                 ),
