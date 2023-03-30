@@ -44,31 +44,30 @@ fn main() {
     match args.command {
         MavlinkFTPCommand::ListDirectory { path } => controller.list_directory(path),
         MavlinkFTPCommand::ReadFile { path } => controller.read_file(path),
-        _ => panic!("Unsupported command!")
+        _ => panic!("Unsupported command!"),
     }
 
     loop {
         while let Ok((_header, message)) = receiver.recv() {
             if let Some(payload) = controller.run() {
-                sender.send(
-                    &header,
-                    &mavlink::common::MavMessage::FILE_TRANSFER_PROTOCOL(
-                        mavlink::common::FILE_TRANSFER_PROTOCOL_DATA {
-                            target_network: 0,
-                            target_system,
-                            target_component,
-                            payload: payload.to_bytes(),
-                        },
-                    ),
-                ).expect("Failed to send message");
+                sender
+                    .send(
+                        &header,
+                        &mavlink::common::MavMessage::FILE_TRANSFER_PROTOCOL(
+                            mavlink::common::FILE_TRANSFER_PROTOCOL_DATA {
+                                target_network: 0,
+                                target_system,
+                                target_component,
+                                payload: payload.to_bytes(),
+                            },
+                        ),
+                    )
+                    .expect("Failed to send message");
             }
 
             if let mavlink::common::MavMessage::FILE_TRANSFER_PROTOCOL(msg) = message {
                 if let Some(msg) = controller.parse_mavlink_message(&msg) {
-                    sender.send(
-                        &header,
-                        &msg,
-                    ).expect("Failed to send message");
+                    sender.send(&header, &msg).expect("Failed to send message");
                 }
             }
         }

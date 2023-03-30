@@ -1,10 +1,14 @@
-use structopt::StructOpt;
 use std::path::PathBuf;
+use structopt::StructOpt;
 
 #[derive(Debug, StructOpt)]
 #[structopt(name = "mavlink_ftp_cli", about = "Mavlink FTP CLI")]
 pub struct Opt {
-    #[structopt(long = "connection", default_value = "tcpout:0.0.0.0:5760", help = "Connection string")]
+    #[structopt(
+        long = "connection",
+        default_value = "tcpout:0.0.0.0:5760",
+        help = "Connection string"
+    )]
     pub connection: String,
 
     #[structopt(subcommand)]

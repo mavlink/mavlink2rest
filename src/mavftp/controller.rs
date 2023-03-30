@@ -1,4 +1,5 @@
-use std::{path::PathBuf, io::Write};
+use std::time::{Duration, SystemTime};
+use std::{io::Write, path::PathBuf};
 
 use crate::mavftp::*;
 use num_traits::FromPrimitive;
@@ -27,6 +28,7 @@ struct ReadingFileStatus {
 
 pub struct Controller {
     session: u8,
+    last_time: SystemTime,
     entries: Vec<EntryInfo>,
     status: Option<OperationStatus>,
     waiting: bool,
@@ -36,6 +38,7 @@ impl Controller {
     pub fn new() -> Self {
         Self {
             session: 0,
+            last_time: SystemTime::now(),
             entries: Vec::new(),
             status: None,
             waiting: false,
@@ -50,10 +53,16 @@ impl Controller {
     }
 
     pub fn read_file(&mut self, path: String) {
-        self.status = Some(OperationStatus::OpeningFile(OpeningFileStatus{path}));
+        self.status = Some(OperationStatus::OpeningFile(OpeningFileStatus { path }));
     }
 
     pub fn run(&mut self) -> Option<MavlinkFtpPayload> {
+        /*
+        if self.last_time.elapsed().unwrap() > Duration::from_millis(2) {
+            self.last_time = SystemTime::now();
+            self.waiting = false;
+        }
+         */
         if self.waiting {
             return None;
         }
@@ -80,12 +89,12 @@ impl Controller {
                     0,
                     status.path.as_bytes().to_vec(),
                 ));
-            },
+            }
             Some(OperationStatus::ReadingFile(status)) => {
                 return Some(MavlinkFtpPayload::new(
                     1,
                     self.session,
-                    MavlinkFtpOpcode::ReadFile,
+                    MavlinkFtpOpcode::BurstReadFile,
                     MavlinkFtpOpcode::None,
                     0,
                     status.offset,
@@ -97,7 +106,8 @@ impl Controller {
     }
 
     pub fn parse_mavlink_message(
-        &mut self, message: &mavlink::common::FILE_TRANSFER_PROTOCOL_DATA,
+        &mut self,
+        message: &mavlink::common::FILE_TRANSFER_PROTOCOL_DATA,
     ) -> Option<mavlink::common::MavMessage> {
         self.waiting = false;
         let payload = &message.payload;
@@ -108,6 +118,7 @@ impl Controller {
         match opcode {
             MavlinkFtpOpcode::Ack => {
                 let payload = MavlinkFtpPayload::from_bytes(&payload).unwrap();
+                //dbg!(&payload);
 
                 match &mut self.status {
                     Some(OperationStatus::ScanningFolder(status)) => {
@@ -154,6 +165,7 @@ impl Controller {
                         }
                     }
                     Some(OperationStatus::OpeningFile(status)) => {
+                        dbg!("File open!");
                         if payload.size != 4 {
                             panic!("Wrong size");
                         }
@@ -163,7 +175,7 @@ impl Controller {
                             payload.data[2],
                             payload.data[3],
                         ]);
-                        
+
                         self.status = Some(OperationStatus::ReadingFile(ReadingFileStatus {
                             path: status.path.clone(),
                             offset: 0,
@@ -172,13 +184,17 @@ impl Controller {
                         }));
 
                         return None;
-                    },
+                    }
                     Some(OperationStatus::ReadingFile(status)) => {
+                        //dbg!("Reading..");
                         let chunk = &payload.data;
                         status.content.extend_from_slice(chunk);
                         status.offset += chunk.len() as u32;
+                        //dbg!(self.last_time.elapsed().unwrap().as_micros());
+                        dbg!(status.offset);
+                        dbg!(status.file_size);
 
-                        if status.offset < status.file_size {
+                        if payload.burst_complete == 1 {
                             self.waiting = true;
                             return Some(mavlink::common::MavMessage::FILE_TRANSFER_PROTOCOL(
                                 mavlink::common::FILE_TRANSFER_PROTOCOL_DATA {
@@ -188,7 +204,7 @@ impl Controller {
                                     payload: MavlinkFtpPayload::new(
                                         1,
                                         self.session,
-                                        MavlinkFtpOpcode::ReadFile,
+                                        MavlinkFtpOpcode::BurstReadFile,
                                         MavlinkFtpOpcode::None,
                                         0,
                                         status.offset,
@@ -197,9 +213,35 @@ impl Controller {
                                     .to_bytes(),
                                 },
                             ));
+                        }
+
+                        if status.offset < status.file_size {
+                            self.waiting = true;
+                            return None;
+                            /*
+                            return Some(mavlink::common::MavMessage::FILE_TRANSFER_PROTOCOL(
+                                mavlink::common::FILE_TRANSFER_PROTOCOL_DATA {
+                                    target_network: 0,
+                                    target_system: 1,
+                                    target_component: 1,
+                                    payload: MavlinkFtpPayload::new(
+                                        1,
+                                        self.session,
+                                        MavlinkFtpOpcode::BurstReadFile,
+                                        MavlinkFtpOpcode::None,
+                                        0,
+                                        status.offset,
+                                        status.path.as_bytes().to_vec(),
+                                    )
+                                    .to_bytes(),
+                                },
+                            ));
+                             */
                         } else {
-                            std::io::stdout().write_all(&status.content).unwrap();
+                            //std::io::stdout().write_all(&status.content).unwrap();
                             self.status = None;
+                            self.waiting = false;
+                            dbg!("Done!!");
                             return None;
                         }
                     }

@@ -1,6 +1,6 @@
 use num_derive::FromPrimitive;
-use strum_macros::{EnumIter, EnumString};
 use num_traits::FromPrimitive;
+use strum_macros::{EnumIter, EnumString};
 
 #[derive(Debug, Copy, Clone, PartialEq, EnumIter, FromPrimitive)]
 pub enum MavlinkFtpOpcode {
@@ -55,7 +55,7 @@ pub enum MavlinkFtpResponse {
     TerminateSession(u8),
     ResetSessions,
     ListDirectory(Vec<EntryInfo>),
-    
+
     //OpenFileRO(u32, u32),
     //ReadFile(Vec<u8>),
     /*
@@ -177,7 +177,7 @@ impl MavlinkFtpPayload {
         if bytes.len() < 12 {
             return Err("Insufficient bytes in input array".into());
         }
-    
+
         Ok(MavlinkFtpPayload {
             seq_number: u16::from_le_bytes([bytes[0], bytes[1]]),
             session: bytes[2],
