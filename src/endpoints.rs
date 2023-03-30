@@ -115,35 +115,22 @@ pub fn parse_query<T: serde::ser::Serialize>(message: &T) -> String {
 pub fn helper_mavlink(_req: HttpRequest, query: web::Query<MAVLinkHelperQuery>) -> HttpResponse {
     let message_name = query.into_inner().name;
 
-    let result = match mavlink::ardupilotmega::MavMessage::message_id_from_name(&message_name) {
-        Ok(id) => mavlink::Message::default_message_from_id(id),
-        Err(error) => Err(error),
-    };
+    let result: Result<mavlink::ardupilotmega::MavMessage, &str> =
+        match mavlink::ardupilotmega::MavMessage::message_id_from_name(&message_name) {
+            Ok(id) => mavlink::Message::default_message_from_id(id),
+            Err(error) => Err(error),
+        };
 
     match result {
-        Ok(result) => {
-            match result {
-                mavlink::ardupilotmega::MavMessage::common(msg) => {
-                    let result = data::MAVLinkMessage {
-                        header: mavlink::MavHeader::default(),
-                        message: msg,
-                    };
-
-                    return HttpResponse::Ok()
-                        .content_type("application/json")
-                        .body(parse_query(&result));
-                }
-                msg => {
-                    let result = data::MAVLinkMessage {
-                        header: mavlink::MavHeader::default(),
-                        message: msg,
-                    };
-
-                    return HttpResponse::Ok()
-                        .content_type("application/json")
-                        .body(parse_query(&result));
-                }
+        Ok(msg) => {
+            let result = data::MAVLinkMessage {
+                header: mavlink::MavHeader::default(),
+                message: msg,
             };
+
+            return HttpResponse::Ok()
+                .content_type("application/json")
+                .body(parse_query(&result));
         }
         Err(content) => {
             return HttpResponse::NotFound()
@@ -191,28 +178,7 @@ pub fn mavlink_post(
                     .body(format!("Failed to send message: {:?}", error));
             }
         }
-    } else if let Ok(content @ data::MAVLinkMessage::<mavlink::common::MavMessage> { .. }) =
-        json5::from_str(&json_string)
-    {
-        let content_ardupilotmega = mavlink::ardupilotmega::MavMessage::common(content.message);
-        match data
-            .lock()
-            .unwrap()
-            .send(&content.header, &content_ardupilotmega)
-        {
-            Ok(_result) => {
-                data::update((content.header, content_ardupilotmega));
-                return HttpResponse::Ok()
-                    .content_type("application/json")
-                    .body("Ok.");
-            }
-            Err(error) => {
-                return HttpResponse::NotFound()
-                    .content_type("application/json")
-                    .body(format!("Failed to send message: {:?}", error));
-            }
-        }
-    };
+    }
 
     return HttpResponse::NotFound()
         .content_type("application/json")
