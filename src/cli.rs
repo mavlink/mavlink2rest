@@ -1,4 +1,3 @@
-use clap;
 use std::sync::Arc;
 
 #[derive(Debug)]
@@ -61,13 +60,7 @@ pub fn mavlink_system_and_component_id() -> (u8, u8) {
         .parse::<u8>()
         .expect("Component ID should be a value between 1-255.");
 
-    return (system_id, component_id);
-}
-
-// Return the command line used to start this application
-#[allow(dead_code)]
-pub fn command_line_string() -> String {
-    return std::env::args().collect::<Vec<String>>().join(" ");
+    (system_id, component_id)
 }
 
 //TODO: Move to the top
@@ -142,7 +135,7 @@ mod tests {
 
     #[test]
     fn default_arguments() {
-        assert_eq!(is_verbose(), false);
+        assert!(!is_verbose());
         assert_eq!(mavlink_connection_string(), "udpin:0.0.0.0:14550");
         assert_eq!(server_address(), "0.0.0.0:8088");
         assert_eq!(mavlink_version(), 2);
