@@ -4,6 +4,9 @@ use std::{io::Write, path::PathBuf};
 use crate::mavftp::*;
 use num_traits::FromPrimitive;
 
+use indicatif::{ProgressBar, ProgressState, ProgressStyle};
+use sha1::{Digest, Sha1};
+
 enum OperationStatus {
     ScanningFolder(ScanningFolderStatus),
     OpeningFile(OpeningFileStatus),
@@ -32,6 +35,7 @@ pub struct Controller {
     entries: Vec<EntryInfo>,
     status: Option<OperationStatus>,
     waiting: bool,
+    progress: Option<ProgressBar>,
 }
 
 impl Controller {
@@ -42,6 +46,7 @@ impl Controller {
             entries: Vec::new(),
             status: None,
             waiting: false,
+            progress: None,
         }
     }
 
@@ -176,6 +181,15 @@ impl Controller {
                             payload.data[3],
                         ]);
 
+                        self.progress = Some(ProgressBar::new(file_size as u64));
+                        if let Some(progress) = &mut self.progress {
+                            progress.set_style(ProgressStyle::with_template("{spinner:.green} [{elapsed_precise}] [{wide_bar:.cyan/blue}] {bytes}/{total_bytes} ({eta})")
+                                .unwrap()
+                                .with_key("eta", |state: &ProgressState, w: &mut dyn std::fmt::Write| write!(w, "{:.1}s", state.eta().as_secs_f64()).unwrap())
+                                .progress_chars("#>-")
+                            );
+                        }
+
                         self.status = Some(OperationStatus::ReadingFile(ReadingFileStatus {
                             path: status.path.clone(),
                             offset: 0,
@@ -191,26 +205,33 @@ impl Controller {
                         status.content.extend_from_slice(chunk);
                         status.offset += chunk.len() as u32;
                         //dbg!(self.last_time.elapsed().unwrap().as_micros());
-                        dbg!(status.offset);
-                        dbg!(status.file_size);
+                        //dbg!(status.offset);
+                        //dbg!(status.file_size);
+                        if let Some(progress) = &self.progress {
+                            progress.inc(chunk.len() as u64);
+                        }
+                        //dbg!(&payload);
 
                         if payload.burst_complete == 1 {
+                            let mut new_payload = MavlinkFtpPayload::new(
+                                payload.seq_number + 1,
+                                self.session,
+                                MavlinkFtpOpcode::BurstReadFile,
+                                MavlinkFtpOpcode::None,
+                                0,
+                                status.offset,
+                                status.path.as_bytes().to_vec(),
+                            );
+                            new_payload.size = 239;
+                            new_payload.data = vec![];
+                            //dbg!(&new_payload);
                             self.waiting = true;
                             return Some(mavlink::common::MavMessage::FILE_TRANSFER_PROTOCOL(
                                 mavlink::common::FILE_TRANSFER_PROTOCOL_DATA {
                                     target_network: 0,
                                     target_system: 1,
                                     target_component: 1,
-                                    payload: MavlinkFtpPayload::new(
-                                        1,
-                                        self.session,
-                                        MavlinkFtpOpcode::BurstReadFile,
-                                        MavlinkFtpOpcode::None,
-                                        0,
-                                        status.offset,
-                                        status.path.as_bytes().to_vec(),
-                                    )
-                                    .to_bytes(),
+                                    payload: new_payload.to_bytes(),
                                 },
                             ));
                         }
@@ -239,9 +260,14 @@ impl Controller {
                              */
                         } else {
                             //std::io::stdout().write_all(&status.content).unwrap();
-                            self.status = None;
                             self.waiting = false;
                             dbg!("Done!!");
+                            let mut hasher = Sha1::new();
+                            hasher.update(&status.content);
+                            println!("{:x?}", hasher.finalize());
+                            let mut f = std::fs::File::create("/tmp/potato").ok().unwrap();
+                            f.write_all(&status.content);
+                            self.status = None;
                             return None;
                         }
                     }
