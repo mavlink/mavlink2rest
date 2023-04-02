@@ -1,3 +1,4 @@
+use std::process::exit;
 use std::time::{Duration, SystemTime};
 use std::{io::Write, path::PathBuf};
 
@@ -15,6 +16,7 @@ enum OperationStatus {
     OpeningFile(OpeningFileStatus),
     ReadingFile(ReadingFileStatus),
     Reset,
+    CalcFileCRC32(CalcFileCRC32Status)
 }
 
 struct ScanningFolderStatus {
@@ -23,6 +25,10 @@ struct ScanningFolderStatus {
 }
 
 struct OpeningFileStatus {
+    path: String,
+}
+
+struct CalcFileCRC32Status {
     path: String,
 }
 
@@ -64,8 +70,13 @@ impl Controller {
     pub fn read_file(&mut self, path: String) {
         self.status = Some(OperationStatus::OpeningFile(OpeningFileStatus { path }));
     }
+
     pub fn reset(&mut self) {
         self.status = Some(OperationStatus::Reset);
+    }
+
+    pub fn crc(&mut self, path: String) {
+        self.status = Some(OperationStatus::CalcFileCRC32(CalcFileCRC32Status { path }));
     }
 
     pub fn run(&mut self) -> Option<MavlinkFtpPayload> {
@@ -101,6 +112,13 @@ impl Controller {
                     &status.path,
                 ));
             }
+            Some(OperationStatus::CalcFileCRC32(status)) => {
+                return Some(MavlinkFtpPayload::newCalcFileCRC32(
+                    1,
+                    self.session,
+                    &status.path,
+                ));
+            }
             Some(OperationStatus::ReadingFile(status)) => {
                 return Some(MavlinkFtpPayload::newReadFile(
                     1,
@@ -126,7 +144,6 @@ impl Controller {
         match opcode {
             MavlinkFtpOpcode::Ack => {
                 let payload = MavlinkFtpPayload::from_bytes(&payload).unwrap();
-                //dbg!(&payload);
 
                 match &mut self.status {
                     Some(OperationStatus::Reset) => {
@@ -157,7 +174,6 @@ impl Controller {
                         }
 
                         if status.offset != 0 {
-                            dbg!("waiting...");
                             self.waiting = true;
                             return Some(mavlink::common::MavMessage::FILE_TRANSFER_PROTOCOL(
                                 mavlink::common::FILE_TRANSFER_PROTOCOL_DATA {
@@ -175,7 +191,6 @@ impl Controller {
                         }
                     }
                     Some(OperationStatus::OpeningFile(status)) => {
-                        dbg!("File open!");
                         if payload.size != 4 {
                             panic!("Wrong size");
                         }
@@ -207,6 +222,18 @@ impl Controller {
 
                         return None;
                     }
+                    Some(OperationStatus::CalcFileCRC32(status)) => {
+                        if payload.req_opcode == MavlinkFtpOpcode::CalcFileCRC32 {
+                            let crc = u32::from_le_bytes([
+                                payload.data[0],
+                                payload.data[1],
+                                payload.data[2],
+                                payload.data[3],
+                            ]);
+                            println!("0x{:x?}", crc);
+                            exit(0);
+                        }
+                    },
                     Some(OperationStatus::ReadingFile(status)) => {
                         let chunk = &payload.data;
                         status.file.seek(SeekFrom::Start(payload.offset.into())).unwrap();
@@ -274,10 +301,10 @@ impl Controller {
             }
             MavlinkFtpOpcode::Nak => {
                 let nak_code = MavlinkFtpNak::from_u8(payload[12]).unwrap();
-                panic!("Error: {:#?}", nak_code);
 
                 match nak_code {
                     MavlinkFtpNak::EOF => {
+                        exit(0);
                         // We finished the current operation
                         dbg!(&self.entries);
                         self.status = None;

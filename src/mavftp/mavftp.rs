@@ -225,6 +225,24 @@ impl MavlinkFtpPayload {
         }
     }
 
+    pub fn newCalcFileCRC32(
+        seq_number: u16,
+        session: u8,
+        path: &str,
+    ) -> Self {
+    Self {
+        seq_number,
+        session,
+        opcode: MavlinkFtpOpcode::CalcFileCRC32,
+        size: path.len(),
+        req_opcode: MavlinkFtpOpcode::None,
+        burst_complete: 0,
+        padding: 0,
+        offset: 0,
+        data: path.as_bytes().to_vec(),
+    }
+}
+
     /*
     opcode: MavlinkFtpOpcode,
         req_opcode: MavlinkFtpOpcode,
