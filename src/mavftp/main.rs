@@ -44,6 +44,7 @@ fn main() {
     match args.command {
         MavlinkFTPCommand::ListDirectory { path } => controller.list_directory(path),
         MavlinkFTPCommand::ReadFile { path } => controller.read_file(path),
+        MavlinkFTPCommand::Reset => controller.reset(),
         _ => panic!("Unsupported command!"),
     }
 

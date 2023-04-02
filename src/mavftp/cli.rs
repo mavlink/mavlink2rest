@@ -66,4 +66,7 @@ pub enum MavlinkFTPCommand {
         /// File path
         path: String,
     },
+    /// Reset sessions
+    #[structopt(name = "reset")]
+    Reset,
 }

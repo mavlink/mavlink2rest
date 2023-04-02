@@ -7,10 +7,14 @@ use num_traits::FromPrimitive;
 use indicatif::{ProgressBar, ProgressState, ProgressStyle};
 use sha1::{Digest, Sha1};
 
+use std::fs::OpenOptions;
+use std::io::{Seek, SeekFrom};
+
 enum OperationStatus {
     ScanningFolder(ScanningFolderStatus),
     OpeningFile(OpeningFileStatus),
     ReadingFile(ReadingFileStatus),
+    Reset,
 }
 
 struct ScanningFolderStatus {
@@ -26,7 +30,7 @@ struct ReadingFileStatus {
     path: String,
     offset: u32,
     file_size: u32,
-    content: Vec<u8>,
+    file: std::fs::File,
 }
 
 pub struct Controller {
@@ -60,6 +64,9 @@ impl Controller {
     pub fn read_file(&mut self, path: String) {
         self.status = Some(OperationStatus::OpeningFile(OpeningFileStatus { path }));
     }
+    pub fn reset(&mut self) {
+        self.status = Some(OperationStatus::Reset);
+    }
 
     pub fn run(&mut self) -> Option<MavlinkFtpPayload> {
         /*
@@ -73,37 +80,33 @@ impl Controller {
         }
         self.waiting = true;
         match &self.status {
-            Some(OperationStatus::ScanningFolder(status)) => {
-                return Some(MavlinkFtpPayload::new(
+            Some(OperationStatus::Reset) => {
+                return Some(MavlinkFtpPayload::newResetSesions(
                     1,
                     self.session,
-                    MavlinkFtpOpcode::ListDirectory,
-                    MavlinkFtpOpcode::None,
-                    0,
+                ));
+            }
+            Some(OperationStatus::ScanningFolder(status)) => {
+                return Some(MavlinkFtpPayload::newListDirectory(
+                    1,
+                    self.session,
                     status.offset as u32,
-                    status.path.as_bytes().to_vec(),
+                    &status.path,
                 ));
             }
             Some(OperationStatus::OpeningFile(status)) => {
-                return Some(MavlinkFtpPayload::new(
+                return Some(MavlinkFtpPayload::newOpenFile(
                     1,
                     self.session,
-                    MavlinkFtpOpcode::OpenFileRO,
-                    MavlinkFtpOpcode::None,
-                    0,
-                    0,
-                    status.path.as_bytes().to_vec(),
+                    &status.path,
                 ));
             }
             Some(OperationStatus::ReadingFile(status)) => {
-                return Some(MavlinkFtpPayload::new(
+                return Some(MavlinkFtpPayload::newReadFile(
                     1,
                     self.session,
-                    MavlinkFtpOpcode::BurstReadFile,
-                    MavlinkFtpOpcode::None,
                     0,
-                    status.offset,
-                    status.path.as_bytes().to_vec(),
+                    usize::MAX,
                 ));
             }
             None => return None,
@@ -126,6 +129,12 @@ impl Controller {
                 //dbg!(&payload);
 
                 match &mut self.status {
+                    Some(OperationStatus::Reset) => {
+                        if payload.req_opcode == MavlinkFtpOpcode::ResetSessions {
+                            self.waiting = false;
+                            self.status = None;
+                        }
+                    }
                     Some(OperationStatus::ScanningFolder(status)) => {
                         let entries: Vec<&[u8]> = payload.data.split(|&byte| byte == 0).collect();
 
@@ -155,16 +164,12 @@ impl Controller {
                                     target_network: 0,
                                     target_system: 1,
                                     target_component: 1,
-                                    payload: MavlinkFtpPayload::new(
+                                    payload: MavlinkFtpPayload::newListDirectory(
                                         1,
                                         self.session,
-                                        MavlinkFtpOpcode::ListDirectory,
-                                        MavlinkFtpOpcode::None,
-                                        0,
                                         status.offset as u32,
-                                        status.path.as_bytes().to_vec(),
-                                    )
-                                    .to_bytes(),
+                                        &status.path,
+                                    ).to_bytes(),
                                 },
                             ));
                         }
@@ -194,44 +199,36 @@ impl Controller {
                             path: status.path.clone(),
                             offset: 0,
                             file_size,
-                            content: Vec::new(),
+                            file: OpenOptions::new()
+                                .write(true)
+                                .create(true)
+                                .open("/tmp/potato2").unwrap(),
                         }));
 
                         return None;
                     }
                     Some(OperationStatus::ReadingFile(status)) => {
-                        //dbg!("Reading..");
                         let chunk = &payload.data;
-                        status.content.extend_from_slice(chunk);
-                        status.offset += chunk.len() as u32;
-                        //dbg!(self.last_time.elapsed().unwrap().as_micros());
-                        //dbg!(status.offset);
-                        //dbg!(status.file_size);
+                        status.file.seek(SeekFrom::Start(payload.offset.into())).unwrap();
+                        status.file.write_all(chunk).unwrap();
+                        status.offset = payload.offset + payload.size as u32;
                         if let Some(progress) = &self.progress {
-                            progress.inc(chunk.len() as u64);
+                            progress.set_position(status.offset as u64);
                         }
-                        //dbg!(&payload);
 
                         if payload.burst_complete == 1 {
-                            let mut new_payload = MavlinkFtpPayload::new(
-                                payload.seq_number + 1,
-                                self.session,
-                                MavlinkFtpOpcode::BurstReadFile,
-                                MavlinkFtpOpcode::None,
-                                0,
-                                status.offset,
-                                status.path.as_bytes().to_vec(),
-                            );
-                            new_payload.size = 239;
-                            new_payload.data = vec![];
-                            //dbg!(&new_payload);
                             self.waiting = true;
                             return Some(mavlink::common::MavMessage::FILE_TRANSFER_PROTOCOL(
                                 mavlink::common::FILE_TRANSFER_PROTOCOL_DATA {
                                     target_network: 0,
                                     target_system: 1,
                                     target_component: 1,
-                                    payload: new_payload.to_bytes(),
+                                    payload: MavlinkFtpPayload::newReadFile(
+                                        payload.seq_number + 1,
+                                        self.session,
+                                        status.offset,
+                                        usize::MAX,
+                                    ).to_bytes(),
                                 },
                             ));
                         }
@@ -262,11 +259,12 @@ impl Controller {
                             //std::io::stdout().write_all(&status.content).unwrap();
                             self.waiting = false;
                             dbg!("Done!!");
-                            let mut hasher = Sha1::new();
-                            hasher.update(&status.content);
-                            println!("{:x?}", hasher.finalize());
-                            let mut f = std::fs::File::create("/tmp/potato").ok().unwrap();
-                            f.write_all(&status.content);
+                            //let mut hasher = Sha1::new();
+                            //dbg!(&status.content.len());
+                            //hasher.update(&status.content);
+                            //println!("{:x?}", hasher.finalize());
+                            //let mut f = std::fs::File::create("/tmp/potato").ok().unwrap();
+                            //f.write_all(&status.content);
                             self.status = None;
                             return None;
                         }
@@ -276,7 +274,7 @@ impl Controller {
             }
             MavlinkFtpOpcode::Nak => {
                 let nak_code = MavlinkFtpNak::from_u8(payload[12]).unwrap();
-                println!("Error: {:#?}", nak_code);
+                panic!("Error: {:#?}", nak_code);
 
                 match nak_code {
                     MavlinkFtpNak::EOF => {

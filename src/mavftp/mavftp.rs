@@ -52,6 +52,7 @@ pub enum MavlinkFtpNak {
 
 #[derive(Debug)]
 pub enum MavlinkFtpResponse {
+    None,
     TerminateSession(u8),
     ResetSessions,
     ListDirectory(Vec<EntryInfo>),
@@ -134,27 +135,103 @@ pub struct MavlinkFtpPayload {
 }
 
 impl MavlinkFtpPayload {
-    pub fn new(
+    pub fn newResetSesions(
         seq_number: u16,
         session: u8,
-        opcode: MavlinkFtpOpcode,
-        req_opcode: MavlinkFtpOpcode,
-        burst_complete: u8,
-        offset: u32,
-        data: Vec<u8>,
     ) -> Self {
         Self {
             seq_number,
             session,
-            opcode,
-            size: data.len(),
-            req_opcode,
-            burst_complete,
+            opcode: MavlinkFtpOpcode::ResetSessions,
+            size: 0,
+            req_opcode: MavlinkFtpOpcode::None,
+            burst_complete: 0,
             padding: 0,
-            offset,
-            data,
+            offset: 0,
+            data: vec![],
         }
     }
+
+    pub fn newTerminateSession(
+        seq_number: u16,
+        session: u8,
+    ) -> Self {
+        Self {
+            seq_number,
+            session,
+            opcode: MavlinkFtpOpcode::TerminateSession,
+            size: 0,
+            req_opcode: MavlinkFtpOpcode::None,
+            burst_complete: 0,
+            padding: 0,
+            offset: 0,
+            data: vec![],
+        }
+    }
+
+    pub fn newListDirectory(
+        seq_number: u16,
+        session: u8,
+        offset: u32,
+        path: &str,
+    ) -> Self {
+        Self {
+            seq_number,
+            session,
+            opcode: MavlinkFtpOpcode::ListDirectory,
+            size: path.len(),
+            req_opcode: MavlinkFtpOpcode::None,
+            burst_complete: 0,
+            padding: 0,
+            offset,
+            data: path.as_bytes().to_vec(),
+        }
+    }
+
+    pub fn newOpenFile(
+        seq_number: u16,
+        session: u8,
+        path: &str,
+    ) -> Self {
+        Self {
+            seq_number,
+            session,
+            opcode: MavlinkFtpOpcode::OpenFileRO,
+            size: path.len(),
+            req_opcode: MavlinkFtpOpcode::None,
+            burst_complete: 0,
+            padding: 0,
+            offset: 0,
+            data: path.as_bytes().to_vec(),
+        }
+    }
+
+    pub fn newReadFile(
+        seq_number: u16,
+        session: u8,
+        offset: u32,
+        size_left: usize,
+    ) -> Self {
+        Self {
+            seq_number,
+            session,
+            opcode: MavlinkFtpOpcode::BurstReadFile,
+            size: size_left.clamp(0, 239), // 239 is the max size on the data field
+            req_opcode: MavlinkFtpOpcode::None,
+            burst_complete: 0,
+            padding: 0,
+            offset,
+            data: vec![],
+        }
+    }
+
+    /*
+    opcode: MavlinkFtpOpcode,
+        req_opcode: MavlinkFtpOpcode,
+        burst_complete: u8,
+        offset: u32,
+        data: Vec<u8>,
+        */
 
     // Convert payload structure into a byte array
     pub fn to_bytes(&self) -> Vec<u8> {
