@@ -56,6 +56,6 @@ if __name__ == "__main__":
     loop = asyncio.new_event_loop()
     loop.run_until_complete(
         start_client(
-            args.url + "/ws/mavlink" + f"?filter={args.filter}"
+            args.url + "v1/ws/mavlink" + f"?filter={args.filter}"
         )
     )

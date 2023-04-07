@@ -12,9 +12,9 @@
               {{info.service.name}} - {{info.service.version}} -
               {{info.service.sha.substring(0, 7)}} - {{info.service.build_date.substring(0, 10)}}<br/>
               By: {{formatAuthors(info.service.authors)}}<br />
-              Check the <a href="\mavlink">mavlink path</a> for the data<br />
+              Check the <a href="/v1/mavlink">mavlink path</a> for the data<br />
               You can also check nested paths:
-              <a href="mavlink/vehicles/1/components/1/messages/HEARTBEAT/message/mavtype/type"
+              <a href="v1/mavlink/vehicles/1/components/1/messages/HEARTBEAT/message/mavtype/type"
                 >mavlink/vehicles/{system_id}/components/{component_id}/messages/HEARTBEAT/message/mavtype/type</a
               ><br /> <br />
 
@@ -46,7 +46,7 @@
                   :key="component_id"
                 >
                   <a
-                    v-bind:href="'mavlink/vehicles/' + vehicle_id + '/components/' + component_id"
+                    v-bind:href="'v1/mavlink/vehicles/' + vehicle_id + '/components/' + component_id"
                   >
                     Component ID: {{component_id}}
                   <a/>
@@ -57,7 +57,7 @@
                     >
                       <div>
                         <a
-                          v-bind:href="'mavlink/vehicles/' + vehicle_id + '/components/' + component_id + '/messages/' + message_name"
+                          v-bind:href="'v1/mavlink/vehicles/' + vehicle_id + '/components/' + component_id + '/messages/' + message_name"
                         >
                           {{message_name}}
                         </a>
@@ -113,7 +113,7 @@
           async requestData () {
             setTimeout(
               function () {
-                fetch('mavlink').then(
+                fetch('v1/mavlink').then(
                   function (response) {
                     response.json().then((data) => this.data = data)
                   }.bind(this),

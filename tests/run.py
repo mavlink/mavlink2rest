@@ -6,7 +6,7 @@ import json
 import requests
 import time
 
-API = "http://0.0.0.0:8088"
+API = "http://0.0.0.0:8088/v1"
 
 def vehicle_mode():
     response = requests.get(f"{API}/mavlink/vehicles/1/components/1/messages/HEARTBEAT").json()
