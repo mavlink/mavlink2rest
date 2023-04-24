@@ -146,7 +146,7 @@ pub fn helper_mavlink(_req: HttpRequest, query: web::Query<MAVLinkHelperQuery>) 
             };
         }
         Err(content) => {
-            return HttpResponse::NotFound()
+            return HttpResponse::BadRequest()
                 .content_type("application/json")
                 .body(parse_query(&content));
         }
@@ -163,7 +163,7 @@ pub fn mavlink_post(
     let json_string = match String::from_utf8(bytes.to_vec()) {
         Ok(content) => content,
         Err(error) => {
-            return HttpResponse::NotFound()
+            return HttpResponse::BadRequest()
                 .content_type("application/json")
                 .body(format!(
                     "Failed to parse input as UTF-8 string: {:?}",
@@ -186,7 +186,7 @@ pub fn mavlink_post(
                     .body("Ok.");
             }
             Err(error) => {
-                return HttpResponse::NotFound()
+                return HttpResponse::InternalServerError()
                     .content_type("application/json")
                     .body(format!("Failed to send message: {:?}", error));
             }
@@ -207,14 +207,14 @@ pub fn mavlink_post(
                     .body("Ok.");
             }
             Err(error) => {
-                return HttpResponse::NotFound()
+                return HttpResponse::InternalServerError()
                     .content_type("application/json")
                     .body(format!("Failed to send message: {:?}", error));
             }
         }
     };
 
-    return HttpResponse::NotFound()
+    return HttpResponse::BadRequest()
         .content_type("application/json")
         .body(format!(
             "Failed to parse message, not a valid MAVLinkMessage."
