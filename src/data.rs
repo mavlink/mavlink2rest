@@ -33,23 +33,15 @@ impl Temporal {
     }
 }
 
-#[derive(Clone, Debug, Deserialize, Serialize)]
+#[derive(Default, Clone, Debug, Deserialize, Serialize)]
 struct Status {
     time: Temporal,
-}
-
-impl Default for Status {
-    fn default() -> Self {
-        Self {
-            time: Temporal::default(),
-        }
-    }
 }
 
 impl Status {
     fn update(&mut self) -> &mut Self {
         self.time.update();
-        return self;
+        self
     }
 }
 
@@ -79,6 +71,7 @@ struct MAVLinkVehicleComponentData {
 }
 
 impl MAVLinkVehicleComponentData {
+    #[allow(clippy::map_entry)]
     fn update(&mut self, message: &MAVLinkMessage<mavlink::ardupilotmega::MavMessage>) {
         // If message does not exist, add it
         let message_name = message.message.message_name().into();
@@ -96,7 +89,7 @@ impl MAVLinkVehicleComponentData {
         self.messages
             .get_mut(&message_name)
             .unwrap()
-            .update(&message);
+            .update(message);
     }
 }
 
@@ -107,6 +100,7 @@ struct MAVLinkVehicleData {
 }
 
 impl MAVLinkVehicleData {
+    #[allow(clippy::map_entry)]
     fn update(&mut self, message: &MAVLinkMessage<mavlink::ardupilotmega::MavMessage>) {
         // If component does not exist, adds it
         let component_id = message.header.component_id;
@@ -123,7 +117,7 @@ impl MAVLinkVehicleData {
         self.components
             .get_mut(&component_id)
             .unwrap()
-            .update(&message);
+            .update(message);
     }
 }
 
@@ -137,25 +131,22 @@ impl MAVLinkVehiclesData {
     fn update(&mut self, message: MAVLinkMessage<mavlink::ardupilotmega::MavMessage>) {
         // If vehicle does not exist for us, adds it
         let vehicle_id = message.header.system_id;
-        if !self.vehicles.contains_key(&vehicle_id) {
-            self.vehicles.insert(
-                vehicle_id,
-                MAVLinkVehicleData {
-                    id: vehicle_id,
-                    components: HashMap::new(),
-                },
-            );
-        }
+        self.vehicles
+            .entry(vehicle_id)
+            .or_insert(MAVLinkVehicleData {
+                id: vehicle_id,
+                components: HashMap::new(),
+            });
 
         self.vehicles.get_mut(&vehicle_id).unwrap().update(&message);
     }
 
     pub fn pointer(&self, path: &str) -> String {
-        let path = format!("/{}", path);
-        if path == "/" {
+        if path.is_empty() {
             return serde_json::to_string_pretty(self).unwrap();
-        };
+        }
 
+        let path = format!("/{path}");
         dbg!(&path);
 
         if path == "/vehicles" {
@@ -193,5 +184,5 @@ pub fn update((header, message): (mavlink::MavHeader, mavlink::ardupilotmega::Ma
 
 pub fn messages() -> MAVLinkVehiclesData {
     let messages = DATA.messages.lock().unwrap();
-    return messages.clone();
+    messages.clone()
 }

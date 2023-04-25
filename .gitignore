@@ -1,2 +1,4 @@
 /target
 **/*.rs.bk
+/src/html
+Cargo.lock
