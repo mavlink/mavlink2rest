@@ -1,6 +1,7 @@
 use std::collections::HashMap;
 use std::sync::{Arc, Mutex};
 
+use lazy_static::lazy_static;
 use mavlink::{self, Message};
 use serde::{Deserialize, Serialize};
 
@@ -33,23 +34,15 @@ impl Temporal {
     }
 }
 
-#[derive(Clone, Debug, Deserialize, Serialize)]
+#[derive(Default, Clone, Debug, Deserialize, Serialize)]
 struct Status {
     time: Temporal,
-}
-
-impl Default for Status {
-    fn default() -> Self {
-        Self {
-            time: Temporal::default(),
-        }
-    }
 }
 
 impl Status {
     fn update(&mut self) -> &mut Self {
         self.time.update();
-        return self;
+        self
     }
 }
 
@@ -80,23 +73,14 @@ struct MAVLinkVehicleComponentData {
 
 impl MAVLinkVehicleComponentData {
     fn update(&mut self, message: &MAVLinkMessage<mavlink::ardupilotmega::MavMessage>) {
-        // If message does not exist, add it
-        let message_name = message.message.message_name().into();
-        if !self.messages.contains_key(&message_name) {
-            self.messages.insert(
-                message_name,
-                MAVLinkMessageStatus {
-                    message: message.message.clone(),
-                    status: Status::default(),
-                },
-            );
-            return;
-        }
-
+        let message_name = message.message.message_name().to_string();
         self.messages
-            .get_mut(&message_name)
-            .unwrap()
-            .update(&message);
+            .entry(message_name)
+            .or_insert(MAVLinkMessageStatus {
+                message: message.message.clone(),
+                status: Status::default(),
+            })
+            .update(message);
     }
 }
 
@@ -108,22 +92,14 @@ struct MAVLinkVehicleData {
 
 impl MAVLinkVehicleData {
     fn update(&mut self, message: &MAVLinkMessage<mavlink::ardupilotmega::MavMessage>) {
-        // If component does not exist, adds it
         let component_id = message.header.component_id;
-        if !self.components.contains_key(&component_id) {
-            self.components.insert(
-                component_id,
-                MAVLinkVehicleComponentData {
-                    id: component_id,
-                    messages: HashMap::new(),
-                },
-            );
-        }
-
         self.components
-            .get_mut(&component_id)
-            .unwrap()
-            .update(&message);
+            .entry(component_id)
+            .or_insert(MAVLinkVehicleComponentData {
+                id: component_id,
+                messages: HashMap::new(),
+            })
+            .update(message);
     }
 }
 
@@ -135,26 +111,22 @@ pub struct MAVLinkVehiclesData {
 impl MAVLinkVehiclesData {
     //TODO: Move message to reference
     fn update(&mut self, message: MAVLinkMessage<mavlink::ardupilotmega::MavMessage>) {
-        // If vehicle does not exist for us, adds it
         let vehicle_id = message.header.system_id;
-        if !self.vehicles.contains_key(&vehicle_id) {
-            self.vehicles.insert(
-                vehicle_id,
-                MAVLinkVehicleData {
-                    id: vehicle_id,
-                    components: HashMap::new(),
-                },
-            );
-        }
-
-        self.vehicles.get_mut(&vehicle_id).unwrap().update(&message);
+        self.vehicles
+            .entry(vehicle_id)
+            .or_insert(MAVLinkVehicleData {
+                id: vehicle_id,
+                components: HashMap::new(),
+            })
+            .update(&message);
     }
 
     pub fn pointer(&self, path: &str) -> String {
-        let path = format!("/{}", path);
-        if path == "/" {
+        if path.is_empty() {
             return serde_json::to_string_pretty(self).unwrap();
-        };
+        }
+
+        let path = format!("/{path}");
 
         dbg!(&path);
 
@@ -186,12 +158,9 @@ pub fn update((header, message): (mavlink::MavHeader, mavlink::ardupilotmega::Ma
         .lock()
         .unwrap()
         .update(MAVLinkMessage { header, message });
-
-    //let messages = DATA.messages.lock().unwrap();
-    //println!(">{} {:#?}", messages.len(), messages);
 }
 
 pub fn messages() -> MAVLinkVehiclesData {
     let messages = DATA.messages.lock().unwrap();
-    return messages.clone();
+    messages.clone()
 }
