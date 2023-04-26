@@ -1,3 +1,5 @@
+use std::path::Path;
+
 use actix_web::{
     web::{self, Json},
     HttpRequest, HttpResponse,
@@ -63,8 +65,8 @@ pub fn root(req: HttpRequest) -> HttpResponse {
         filename = "index.html";
     }
 
-    if let Some(content) = load_html_file(&filename) {
-        let extension = std::path::Path::new(&filename)
+    if let Some(content) = load_html_file(filename) {
+        let extension = Path::new(&filename)
             .extension()
             .and_then(std::ffi::OsStr::to_str)
             .unwrap_or("");
@@ -97,11 +99,10 @@ pub async fn info() -> Json<Info> {
 
 #[api_v2_operation]
 /// Provides an object containing all MAVLink messages received by the service
-pub fn mavlink(req: HttpRequest) -> HttpResponse {
+pub async fn mavlink(req: HttpRequest) -> actix_web::Result<HttpResponse> {
     let path = req.match_info().query("path");
-    HttpResponse::Ok()
-        .content_type("application/json")
-        .body(data::messages().pointer(path))
+    let message = data::messages().pointer(path);
+    ok_response(message).await
 }
 
 pub fn parse_query<T: serde::ser::Serialize>(message: &T) -> String {
@@ -112,7 +113,10 @@ pub fn parse_query<T: serde::ser::Serialize>(message: &T) -> String {
 
 #[api_v2_operation]
 /// Returns a MAVLink message matching the given message name
-pub fn helper_mavlink(_req: HttpRequest, query: web::Query<MAVLinkHelperQuery>) -> HttpResponse {
+pub async fn helper_mavlink(
+    _req: HttpRequest,
+    query: web::Query<MAVLinkHelperQuery>,
+) -> actix_web::Result<HttpResponse> {
     let message_name = query.into_inner().name;
 
     let result = match mavlink::ardupilotmega::MavMessage::message_id_from_name(&message_name) {
@@ -122,77 +126,59 @@ pub fn helper_mavlink(_req: HttpRequest, query: web::Query<MAVLinkHelperQuery>) 
 
     match result {
         Ok(result) => {
-            match result {
+            let msg = match result {
                 mavlink::ardupilotmega::MavMessage::common(msg) => {
-                    let result = data::MAVLinkMessage {
+                    parse_query(&data::MAVLinkMessage {
                         header: mavlink::MavHeader::default(),
                         message: msg,
-                    };
-
-                    return HttpResponse::Ok()
-                        .content_type("application/json")
-                        .body(parse_query(&result));
+                    })
                 }
-                msg => {
-                    let result = data::MAVLinkMessage {
-                        header: mavlink::MavHeader::default(),
-                        message: msg,
-                    };
-
-                    return HttpResponse::Ok()
-                        .content_type("application/json")
-                        .body(parse_query(&result));
-                }
+                msg => parse_query(&data::MAVLinkMessage {
+                    header: mavlink::MavHeader::default(),
+                    message: msg,
+                }),
             };
+
+            ok_response(msg).await
         }
-        Err(content) => {
-            return HttpResponse::BadRequest()
-                .content_type("application/json")
-                .body(parse_query(&content));
-        }
+        Err(content) => not_found_response(parse_query(&content)).await,
     }
 }
 
 #[api_v2_operation]
+#[allow(clippy::await_holding_lock)]
 /// Send a MAVLink message for the desired vehicle
-pub fn mavlink_post(
+pub async fn mavlink_post(
     data: web::Data<MAVLinkVehicleArcMutex>,
     _req: HttpRequest,
     bytes: web::Bytes,
-) -> HttpResponse {
+) -> actix_web::Result<HttpResponse> {
     let json_string = match String::from_utf8(bytes.to_vec()) {
         Ok(content) => content,
-        Err(error) => {
-            return HttpResponse::BadRequest()
-                .content_type("application/json")
-                .body(format!(
-                    "Failed to parse input as UTF-8 string: {:?}",
-                    error
-                ));
+        Err(err) => {
+            return not_found_response(format!("Failed to parse input as UTF-8 string: {err:?}"))
+                .await;
         }
     };
 
     debug!("MAVLink post received: {json_string}");
 
-    //TODO: unify error and send
-    if let Ok(content @ data::MAVLinkMessage::<mavlink::ardupilotmega::MavMessage> { .. }) =
-        json5::from_str(&json_string)
+    if let Ok(content) =
+        json5::from_str::<data::MAVLinkMessage<mavlink::ardupilotmega::MavMessage>>(&json_string)
     {
         match data.lock().unwrap().send(&content.header, &content.message) {
             Ok(_result) => {
                 data::update((content.header, content.message));
-                return HttpResponse::Ok()
-                    .content_type("application/json")
-                    .body("Ok.");
+                return ok_response(String::from("Ok.")).await;
             }
-            Err(error) => {
-                return HttpResponse::InternalServerError()
-                    .content_type("application/json")
-                    .body(format!("Failed to send message: {:?}", error));
+            Err(err) => {
+                return not_found_response(format!("Failed to send message: {err:?}")).await
             }
         }
-    } else if let Ok(content @ data::MAVLinkMessage::<mavlink::common::MavMessage> { .. }) =
-        json5::from_str(&json_string)
+    }
+
+    if let Ok(content) =
+        json5::from_str::<data::MAVLinkMessage<mavlink::common::MavMessage>>(&json_string)
     {
         let content_ardupilotmega = mavlink::ardupilotmega::MavMessage::common(content.message);
         match data
@@ -202,23 +188,18 @@ pub fn mavlink_post(
         {
             Ok(_result) => {
                 data::update((content.header, content_ardupilotmega));
-                return HttpResponse::Ok()
-                    .content_type("application/json")
-                    .body("Ok.");
+                return ok_response(String::from("Ok.")).await;
             }
-            Err(error) => {
-                return HttpResponse::InternalServerError()
-                    .content_type("application/json")
-                    .body(format!("Failed to send message: {:?}", error));
+            Err(err) => {
+                return not_found_response(format!("Failed to send message: {err:?}")).await;
             }
         }
-    };
+    }
 
-    return HttpResponse::BadRequest()
-        .content_type("application/json")
-        .body(format!(
-            "Failed to parse message, not a valid MAVLinkMessage."
-        ));
+    not_found_response(String::from(
+        "Failed to parse message, not a valid MAVLinkMessage.",
+    ))
+    .await
 }
 
 #[api_v2_operation]
@@ -234,6 +215,20 @@ pub async fn websocket(
     };
 
     debug!("New websocket with filter {:#?}", &filter);
-    let resp = ws::start(WebsocketActor::new(filter), &req, stream);
-    resp
+
+    ws::start(WebsocketActor::new(filter), &req, stream)
+}
+
+async fn not_found_response(message: String) -> actix_web::Result<HttpResponse> {
+    HttpResponse::NotFound()
+        .content_type("application/json")
+        .body(message)
+        .await
+}
+
+async fn ok_response(message: String) -> actix_web::Result<HttpResponse> {
+    HttpResponse::Ok()
+        .content_type("application/json")
+        .body(message)
+        .await
 }

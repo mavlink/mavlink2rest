@@ -1,18 +1,13 @@
-use crate::MAVLinkMessage;
-use mavlink::Message as MavMessage;
-use std::sync::{Arc, Mutex};
-
 use actix::{Actor, Addr, AsyncContext, Handler, Message, StreamHandler}; //TODO: Check include orders
 use actix_web_actors::ws;
-
-extern crate derivative;
-extern crate regex;
-
-use regex::Regex;
-
 use derivative::Derivative;
-
+use lazy_static::lazy_static;
+use mavlink::Message as MavMessage;
+use regex::Regex;
 use serde::Serialize;
+use std::sync::{Arc, Mutex};
+
+use crate::MAVLinkMessage;
 
 pub struct StringMessage(String);
 
@@ -33,6 +28,7 @@ pub struct WebsocketActorContent {
 
 #[derive(Derivative, Default)]
 #[derivative(Debug)]
+#[allow(clippy::type_complexity)]
 pub struct WebsocketManager {
     pub clients: Vec<WebsocketActorContent>,
     #[derivative(Debug = "ignore")]
@@ -47,10 +43,9 @@ impl WebsocketManager {
 
         let string = serde_json::to_string_pretty(value).unwrap();
         for client in &self.clients {
-            if client.re.is_some() {
-                if client.re.as_ref().unwrap().is_match(name) {
-                    client.actor.do_send(StringMessage(string.clone()));
-                }
+            let is_match = client.re.as_ref().map_or(false, |regx| regx.is_match(name));
+            if is_match {
+                client.actor.do_send(StringMessage(string.clone()));
             }
         }
     }
@@ -67,7 +62,7 @@ pub fn manager() -> Arc<Mutex<WebsocketManager>> {
 
 pub fn send(message: &MAVLinkMessage<mavlink::ardupilotmega::MavMessage>) {
     let name = message.message.message_name();
-    let value = serde_json::to_value(&message).unwrap();
+    let value = serde_json::to_value(message).unwrap();
     MANAGER.lock().unwrap().send(&value, name);
 }
 

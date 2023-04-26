@@ -1,7 +1,6 @@
 use std::sync::{mpsc, Arc, Mutex};
 
 use log::*;
-use mavlink;
 
 pub type MAVLinkVehicleArcMutex = Arc<Mutex<MAVLinkVehicle<mavlink::ardupilotmega::MavMessage>>>;
 
@@ -14,7 +13,7 @@ pub struct MAVLinkVehicle<M: mavlink::Message> {
 
 impl<M: mavlink::Message> MAVLinkVehicle<M> {
     pub fn send(&self, header: &mavlink::MavHeader, message: &M) -> std::io::Result<usize> {
-        let result = self.vehicle.send(&header, &message);
+        let result = self.vehicle.send(header, message);
 
         // Convert from mavlink error to io error
         match result {
@@ -24,6 +23,7 @@ impl<M: mavlink::Message> MAVLinkVehicle<M> {
     }
 }
 
+#[allow(dead_code)]
 pub struct MAVLinkVehicleHandle<M: mavlink::Message> {
     //TODO: Check if we can use vehicle here directly
     pub mavlink_vehicle: Arc<Mutex<MAVLinkVehicle<M>>>,
@@ -40,11 +40,14 @@ impl<M: mavlink::Message> MAVLinkVehicle<M> {
         system_id: u8,
         component_id: u8,
     ) -> Self {
-        let mut vehicle = mavlink::connect(&mavlink_connection_string).unwrap();
+        let mut vehicle = mavlink::connect(mavlink_connection_string).unwrap();
         vehicle.set_protocol_version(version);
-        let mut header = mavlink::MavHeader::default();
-        header.system_id = system_id;
-        header.component_id = component_id;
+        let header = mavlink::MavHeader {
+            system_id,
+            component_id,
+            sequence: 0,
+        };
+
         Self {
             vehicle: Arc::new(vehicle),
             header: Arc::new(Mutex::new(header)),
@@ -63,7 +66,7 @@ impl<
         component_id: u8,
     ) -> Self {
         let mavlink_vehicle: Arc<Mutex<MAVLinkVehicle<M>>> = Arc::new(Mutex::new(
-            MAVLinkVehicle::<M>::new(connection_string.clone(), version, system_id, component_id),
+            MAVLinkVehicle::<M>::new(connection_string, version, system_id, component_id),
         ));
 
         let heartbeat_mavlink_vehicle = mavlink_vehicle.clone();
@@ -72,7 +75,7 @@ impl<
         let (tx_channel, rx_channel) = mpsc::channel::<(mavlink::MavHeader, M)>();
 
         Self {
-            mavlink_vehicle: mavlink_vehicle.clone(),
+            mavlink_vehicle,
             heartbeat_thread: std::thread::spawn(move || heartbeat_loop(heartbeat_mavlink_vehicle)),
             receive_message_thread: std::thread::spawn(move || {
                 receive_message_loop(receive_message_mavlink_vehicle, tx_channel);
