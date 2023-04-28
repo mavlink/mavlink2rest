@@ -169,7 +169,7 @@ pub async fn mavlink_post(
         match data.lock().unwrap().send(&content.header, &content.message) {
             Ok(_result) => {
                 data::update((content.header, content.message));
-                return ok_response(String::from("Ok.")).await;
+                return HttpResponse::Ok().await;
             }
             Err(err) => {
                 return not_found_response(format!("Failed to send message: {err:?}")).await
@@ -188,7 +188,7 @@ pub async fn mavlink_post(
         {
             Ok(_result) => {
                 data::update((content.header, content_ardupilotmega));
-                return ok_response(String::from("Ok.")).await;
+                return HttpResponse::Ok().await;
             }
             Err(err) => {
                 return not_found_response(format!("Failed to send message: {err:?}")).await;
