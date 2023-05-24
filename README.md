@@ -57,11 +57,11 @@ OPTIONS:
 
 ### API
 * MAVLink JSON:
-  * `GET /mavlink|/mavlink/*`. The output is a JSON that you get each nested key individually, E.g:
-    * http://0.0.0.0:8088/mavlink/ATTITUDE
-    * http://0.0.0.0:8088/mavlink/ATTITUDE/roll
-    * http://0.0.0.0:8088/mavlink/ATTITUDE/message_information/time/last_message
-      * Any MAVLink message will contain a normal message definition, as described in `GET /helper/mavlink?name=<MESSAGE_NAME>`, and a **message_information** structure defined as:
+  * `GET /v1/mavlink|/v1/mavlink/*`. The output is a JSON that you get each nested key individually, E.g:
+    * http://0.0.0.0:8088/v1/mavlink/ATTITUDE
+    * http://0.0.0.0:8088/v1/mavlink/ATTITUDE/roll
+    * http://0.0.0.0:8088/v1/mavlink/ATTITUDE/message_information/time/last_message
+      * Any MAVLink message will contain a normal message definition, as described in `GET /v1/helper/mavlink?name=<MESSAGE_NAME>`, and a **message_information** structure defined as:
           ```js
           "message_information": {
               "counter": 0, // Number of messages received
@@ -75,11 +75,11 @@ OPTIONS:
   * `POST /mavlink`. Sends the message to a specific vehicle.
     * For more information about the MAVLink message definition: https://mavlink.io/en/guide/serialization.html
     * **header**: Is the mavlink header definition with `system_id`, `component_id` and `sequence`.
-    * **message**: A valid mavlink [message](https://mavlink.io/en/messages/common.html), for more information check `GET /helper/mavlink?name=<MESSAGE_NAME>`.
+    * **message**: A valid mavlink [message](https://mavlink.io/en/messages/common.html), for more information check `GET /v1/helper/mavlink?name=<MESSAGE_NAME>`.
       * Check [ARM/DISARM example](https://github.com/patrickelectric/mavlink2rest#examples).
 
-  * `GET /helper/mavlink?name=MAVLINK_MESSAGE_NAME`: Helper endpoint to create JSON compatible MAVLink messages, where `MAVLINK_MESSAGE_NAME` is the mavlink message name. E.g:
-    * http://0.0.0.0:8088//helper/mavlink?name=COMMAND_LONG
+  * `GET /v1/helper/mavlink?name=MAVLINK_MESSAGE_NAME`: Helper endpoint to create JSON compatible MAVLink messages, where `MAVLINK_MESSAGE_NAME` is the mavlink message name. E.g:
+    * http://0.0.0.0:8088/v1/helper/mavlink?name=COMMAND_LONG
       ```js
       {
           "header": {
@@ -126,13 +126,13 @@ OPTIONS:
 
 ##### Get all messages:
   ```sh
-  curl --request GET http://0.0.0.0:8088/mavlink\?pretty\=true
+  curl --request GET http://0.0.0.0:8088/v1/mavlink\?pretty\=true
   # The output is huge, you can get it here: https://gist.github.com/patrickelectric/26a407c4e7749cdaa58d06b52212cb1e
   ```
 
 ##### Get attitude:
   ```sh
-  curl --request GET http://0.0.0.0:8088/mavlink/ATTITUDE?pretty=true
+  curl --request GET http://0.0.0.0:8088/v1/mavlink/ATTITUDE?pretty=true
   ```
   ```js
   {
@@ -157,7 +157,7 @@ OPTIONS:
 
 ##### Get time of last *ATTITUDE* message:
   ```sh
-  curl --request GET http://0.0.0.0:8088/mavlink/ATTITUDE/message_information/time/last_message?pretty=true
+  curl --request GET http://0.0.0.0:8088/v1/mavlink/ATTITUDE/message_information/time/last_message?pretty=true
   ```
   ```js
   "2020-03-28T14:28:51.577853-03:00"
@@ -165,7 +165,7 @@ OPTIONS:
 
 ##### Get a message structure example:
   ```sh
-  curl --request GET http://0.0.0.0:8088/helper/mavlink?name=ATTITUDE&pretty\=true
+  curl --request GET http://0.0.0.0:8088/v1/helper/mavlink?name=ATTITUDE&pretty\=true
   ```
   ```js
   {
