@@ -195,7 +195,7 @@ OPTIONS:
 ##### Request vehicle to be [armed](https://mavlink.io/en/messages/common.html#MAV_CMD_COMPONENT_ARM_DISARM):
   ```sh
   # ARM: param1 is 1.0
-  curl --request POST http://0.0.0.0:8088/mavlink -H "Content-Type: application/json" --data \
+  curl --request POST http://0.0.0.0:8088/v1/mavlink -H "Content-Type: application/json" --data \
   '{
     "header": {
       "system_id": 255,
@@ -219,7 +219,7 @@ OPTIONS:
 ##### Request vehicle to be [disarmed](https://mavlink.io/en/messages/common.html#MAV_CMD_COMPONENT_ARM_DISARM):
   ```sh
   # ARM: param1 is 0.0
-  curl --request POST http://0.0.0.0:8088/mavlink -H "Content-Type: application/json" --data \
+  curl --request POST http://0.0.0.0:8088/v1/mavlink -H "Content-Type: application/json" --data \
   '{
     "header": {
       "system_id": 255,
