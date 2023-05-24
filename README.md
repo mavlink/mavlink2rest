@@ -29,22 +29,27 @@ If you prefer, you can install via cargo, if you don't know what it is, use the 
 Capabilities via the command line:
 ```
 USAGE:
-    mavlink2rest [FLAGS] [OPTIONS]
+  mavlink2rest [FLAGS] [OPTIONS]
 
 FLAGS:
-    -h, --help       Prints help information
-    -V, --version    Prints version information
-    -v, --verbose    Be verbose
+  -h, --help       Prints help information
+  -V, --version    Prints version information
+  -v, --verbose    Be verbose
 
 OPTIONS:
-    -c, --connect <TYPE:<IP/SERIAL>:<PORT/BAUDRATE>>
-            Sets the mavlink connection string [default: udpin:0.0.0.0:14550]
+      --component-id <COMPONENT_ID>
+          Sets the component ID for this service, for more information, check:
+          https://mavlink.io/en/messages/common.html#MAV_COMPONENT [default: 0]
+  -c, --connect <TYPE:<IP/SERIAL>:<PORT/BAUDRATE>>
+          Sets the mavlink connection string [default: udpin:0.0.0.0:14550]
 
-        --mavlink <VERSION>
-            Sets the mavlink version used to communicate [default: 2]
+      --mavlink <VERSION>
+          Sets the mavlink version used to communicate [default: 2]  [possible values: 1, 2]
 
-    -s, --server <IP:PORT>
-            Sets the IP and port that the rest server will be provided [default: 0.0.0.0:8088]
+  -s, --server <IP:PORT>
+          Sets the IP and port that the rest server will be provided [default: 0.0.0.0:8088]
+
+      --system-id <SYSTEM_ID>                Sets system ID for this service. [default: 255]
 ```
 
 ## Endpoints
