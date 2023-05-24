@@ -1,6 +1,6 @@
 # Mavlink2Rest
-![Build](https://github.com/patrickelectric/mavlink2rest/workflows/Deploy%20mavlink2rest/badge.svg)
-![Test](https://github.com/patrickelectric/mavlink2rest/workflows/Test/badge.svg)
+![Build](https://github.com/mavlink/mavlink2rest/workflows/Deploy%20mavlink2rest/badge.svg)
+![Test](https://github.com/mavlink/mavlink2rest/workflows/Test/badge.svg)
 [![Cargo download](https://img.shields.io/crates/d/mavlink2rest)](https://crates.io/crates/mavlink2rest)
 [![Crate info](https://img.shields.io/crates/v/mavlink2rest.svg)](https://crates.io/crates/mavlink2rest)
 [![Documentation](https://docs.rs/mavlink2rest/badge.svg)](https://docs.rs/mavlink2rest)
@@ -12,17 +12,17 @@ The current version supports the **ardupilotmega** dialect, that includes **comm
 ## Grab it
 ### Downloads :package:
 
-[Latest builds](https://github.com/patrickelectric/mavlink2rest/releases/latest):
-- :computer: [**Windows**](https://github.com/patrickelectric/mavlink2rest/releases/latest/download/mavlink2rest-x86_64-pc-windows-msvc.exe)
-- :apple: [**MacOS**](https://github.com/patrickelectric/mavlink2rest/releases/latest/download/mavlink2rest-x86_64-apple-darwin)
-- :penguin: [**Linux**](https://github.com/patrickelectric/mavlink2rest/releases/latest/download/mavlink2rest-x86_64-unknown-linux-musl)
-- :strawberry: [**Raspberry**](https://github.com/patrickelectric/mavlink2rest/releases/latest/download/mavlink2rest-arm-unknown-linux-musleabihf)
-  - [ARMv6 binary](https://github.com/patrickelectric/mavlink2rest/releases/latest/download/mavlink2rest-arm-unknown-linux-musleabihf), [ARMv7](https://github.com/patrickelectric/mavlink2rest/releases/latest/download/mavlink2rest-armv7-unknown-linux-musleabihf) is also available under the project releases.
+[Latest builds](https://github.com/mavlink/mavlink2rest/releases/latest):
+- :computer: [**Windows**](https://github.com/mavlink/mavlink2rest/releases/latest/download/mavlink2rest-x86_64-pc-windows-msvc.exe)
+- :apple: [**MacOS**](https://github.com/mavlink/mavlink2rest/releases/latest/download/mavlink2rest-x86_64-apple-darwin)
+- :penguin: [**Linux**](https://github.com/mavlink/mavlink2rest/releases/latest/download/mavlink2rest-x86_64-unknown-linux-musl)
+- :strawberry: [**Raspberry**](https://github.com/mavlink/mavlink2rest/releases/latest/download/mavlink2rest-arm-unknown-linux-musleabihf)
+  - [ARMv6 binary](https://github.com/mavlink/mavlink2rest/releases/latest/download/mavlink2rest-arm-unknown-linux-musleabihf), [ARMv7](https://github.com/mavlink/mavlink2rest/releases/latest/download/mavlink2rest-armv7-unknown-linux-musleabihf) is also available under the project releases.
 
-For others or different releases, check the [releases menu](https://github.com/patrickelectric/mavlink2rest/releases).
+For others or different releases, check the [releases menu](https://github.com/mavlink/mavlink2rest/releases).
 
 ### Install :zap:
-If you prefer, you can install via cargo, if you don't know what it is, use the [download section](https://github.com/patrickelectric/mavlink2rest#downloads-package).
+If you prefer, you can install via cargo, if you don't know what it is, use the [download section](https://github.com/mavlink/mavlink2rest#downloads-package).
 - :gear: Cargo Install: `cargo install mavlink2rest`
 
 ## Help
@@ -81,7 +81,7 @@ OPTIONS:
     * For more information about the MAVLink message definition: https://mavlink.io/en/guide/serialization.html
     * **header**: Is the mavlink header definition with `system_id`, `component_id` and `sequence`.
     * **message**: A valid mavlink [message](https://mavlink.io/en/messages/common.html), for more information check `GET /v1/helper/mavlink?name=<MESSAGE_NAME>`.
-      * Check [ARM/DISARM example](https://github.com/patrickelectric/mavlink2rest#examples).
+      * Check [ARM/DISARM example](https://github.com/mavlink/mavlink2rest#examples).
 
   * `GET /v1/helper/mavlink?name=MAVLINK_MESSAGE_NAME`: Helper endpoint to create JSON compatible MAVLink messages, where `MAVLINK_MESSAGE_NAME` is the mavlink message name. E.g:
     * http://0.0.0.0:8088/v1/helper/mavlink?name=COMMAND_LONG
