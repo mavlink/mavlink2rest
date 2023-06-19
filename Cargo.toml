@@ -33,7 +33,7 @@ include_dir = "0.7"
 lazy_static = "1.4.0"
 log = "0.4"
 env_logger = "0.8"
-mavlink = { git = "https://github.com/mavlink/rust-mavlink", rev = "0.10.2", features = [ "ardupilotmega", "emit-extensions"] }
+mavlink = { version = "0.11.2", features = [ "ardupilotmega", "emit-extensions"] }
 paperclip = { git = "https://github.com/patrickelectric/paperclip", branch = "patrick-swagger", features = ["actix", "swagger-ui"] }
 regex = "1"
 serde = "1.0.115"
