@@ -119,22 +119,22 @@ impl InnerVehicle {
     }
 
     pub fn heartbeat_message() -> mavlink::ardupilotmega::MavMessage {
-        mavlink::ardupilotmega::MavMessage::common({
-            mavlink::common::MavMessage::HEARTBEAT(mavlink::common::HEARTBEAT_DATA {
+        mavlink::ardupilotmega::MavMessage::ardupilotmega({
+            mavlink::ardupilotmega::MavMessage::HEARTBEAT(mavlink::ardupilotmega::HEARTBEAT_DATA {
                 custom_mode: 0,
-                mavtype: mavlink::common::MavType::MAV_TYPE_QUADROTOR, // TODO: Move this to something else
-                autopilot: mavlink::common::MavAutopilot::MAV_AUTOPILOT_ARDUPILOTMEGA,
-                base_mode: mavlink::common::MavModeFlag::empty(),
-                system_status: mavlink::common::MavState::MAV_STATE_STANDBY,
+                mavtype: mavlink::ardupilotmega::MavType::MAV_TYPE_QUADROTOR, // TODO: Move this to something else
+                autopilot: mavlink::ardupilotmega::MavAutopilot::MAV_AUTOPILOT_ARDUPILOTMEGA,
+                base_mode: mavlink::ardupilotmega::MavModeFlag::empty(),
+                system_status: mavlink::ardupilotmega::MavState::MAV_STATE_STANDBY,
                 mavlink_version: 0x3,
             })
         })
     }
 
     pub fn request_stream() -> mavlink::ardupilotmega::MavMessage {
-        mavlink::ardupilotmega::MavMessage::common({
-            mavlink::common::MavMessage::REQUEST_DATA_STREAM(
-                mavlink::common::REQUEST_DATA_STREAM_DATA {
+        mavlink::ardupilotmega::MavMessage::ardupilotmega({
+            mavlink::ardupilotmega::MavMessage::REQUEST_DATA_STREAM(
+                mavlink::ardupilotmega::REQUEST_DATA_STREAM_DATA {
                     target_system: 0,
                     target_component: 0,
                     req_stream_id: 0,

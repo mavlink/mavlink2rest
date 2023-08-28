@@ -22,7 +22,7 @@ fn main() -> std::io::Result<()> {
     };
 
     let (system_id, component_id) = cli::mavlink_system_and_component_id();
-    let vehicle = mavlink_vehicle::MAVLinkVehicleHandle::<mavlink::ardupilotmega::MavMessage>::new(
+    let vehicle = mavlink_vehicle::MAVLinkVehicleHandle::new(
         cli::mavlink_connection_string(),
         mavlink_version,
         system_id,
@@ -54,10 +54,7 @@ fn main() -> std::io::Result<()> {
     }
 }
 
-fn ws_callback(
-    inner_vehicle: Arc<Mutex<mavlink_vehicle::MAVLinkVehicle<mavlink::ardupilotmega::MavMessage>>>,
-    value: &str,
-) -> String {
+fn ws_callback(inner_vehicle: Arc<Mutex<mavlink_vehicle::MAVLinkVehicle>>, value: &str) -> String {
     if let Ok(content @ MAVLinkMessage::<mavlink::ardupilotmega::MavMessage> { .. }) =
         serde_json::from_str(value)
     {
@@ -69,21 +66,8 @@ fn ws_callback(
             data::update((content.header, content.message));
         }
 
-        format!("{result:?}")
-    } else if let Ok(content @ MAVLinkMessage::<mavlink::common::MavMessage> { .. }) =
-        serde_json::from_str(value)
-    {
-        let content_ardupilotmega = mavlink::ardupilotmega::MavMessage::common(content.message);
-        let result = inner_vehicle
-            .lock()
-            .unwrap()
-            .send(&content.header, &content_ardupilotmega);
-        if result.is_ok() {
-            data::update((content.header, content_ardupilotmega));
-        }
-
-        format!("{result:?}")
-    } else {
-        String::from("Could not convert input message.")
+        return format!("{:?}", result);
     }
+
+    return "Could not convert input message.".into();
 }
