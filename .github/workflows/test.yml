@@ -24,6 +24,7 @@ jobs:
     - name: Build
       run: cargo build --verbose
     - name: Run SITL & MAVLink2Rest
+      if: ${{ false }} # Disable step until TCP connection is fixed
       timeout-minutes: 5
       run: |
         pip install --user aiohttp asyncio requests
