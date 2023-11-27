@@ -1,7 +1,7 @@
 use super::endpoints;
 use super::mavlink_vehicle::MAVLinkVehicleArcMutex;
 
-use paperclip::actix::{web, OpenApiExt};
+use paperclip::actix::{web, web::Scope, OpenApiExt};
 
 use actix_cors::Cors;
 use actix_web::{
@@ -10,6 +10,7 @@ use actix_web::{
     App, HttpRequest, HttpServer,
 };
 
+use crate::cli;
 use log::*;
 
 fn json_error_handler(error: JsonPayloadError, _: &HttpRequest) -> actix_web::Error {
@@ -18,6 +19,15 @@ fn json_error_handler(error: JsonPayloadError, _: &HttpRequest) -> actix_web::Er
         JsonPayloadError::Overflow => JsonPayloadError::Overflow.into(),
         _ => ErrorBadRequest(error.to_string()),
     }
+}
+
+fn add_v1_paths(scope: Scope) -> Scope {
+    scope
+        .route("/helper/mavlink", web::get().to(endpoints::helper_mavlink))
+        .route("/mavlink", web::get().to(endpoints::mavlink))
+        .route("/mavlink", web::post().to(endpoints::mavlink_post))
+        .route(r"/mavlink/{path:.*}", web::get().to(endpoints::mavlink))
+        .service(web::resource("/ws/mavlink").route(web::get().to(endpoints::websocket)))
 }
 
 // Start REST API server with the desired address
@@ -29,6 +39,11 @@ pub fn run(server_address: &str, mavlink_vehicle: &MAVLinkVehicleArcMutex) {
     // Start HTTP server thread
     let _ = System::new("http-server");
     HttpServer::new(move || {
+        let v1 = add_v1_paths(web::scope("/v1"));
+        let default = match cli::default_api_version() {
+            1 => add_v1_paths(web::scope("")),
+            _ => unreachable!("CLI should only allow supported values."),
+        };
         App::new()
             .wrap(Cors::permissive())
             // Record services and routes for paperclip OpenAPI plugin for Actix.
@@ -45,16 +60,8 @@ pub fn run(server_address: &str, mavlink_vehicle: &MAVLinkVehicleArcMutex) {
                 web::get().to(endpoints::root),
             )
             .route("/info", web::get().to(endpoints::info))
-            .service(
-                web::scope("/v1")
-                    .route("/helper/mavlink", web::get().to(endpoints::helper_mavlink))
-                    .route("/mavlink", web::get().to(endpoints::mavlink))
-                    .route("/mavlink", web::post().to(endpoints::mavlink_post))
-                    .route(r"/mavlink/{path:.*}", web::get().to(endpoints::mavlink))
-                    .service(
-                        web::resource("/ws/mavlink").route(web::get().to(endpoints::websocket)),
-                    ),
-            )
+            .service(default)
+            .service(v1)
             .build()
     })
     .bind(server_address)
