@@ -34,6 +34,16 @@ pub fn server_address() -> &'static str {
     return MANAGER.as_ref().clap_matches.value_of("server").unwrap();
 }
 
+pub fn default_api_version() -> u8 {
+    return MANAGER
+        .as_ref()
+        .clap_matches
+        .value_of("default-api-version")
+        .unwrap()
+        .parse::<u8>()
+        .unwrap();
+}
+
 pub fn mavlink_version() -> u8 {
     return MANAGER
         .as_ref()
@@ -120,6 +130,15 @@ fn get_clap_matches<'a>() -> clap::ArgMatches<'a> {
                 .default_value("0"),
         )
         .arg(
+            clap::Arg::with_name("default-api-version")
+                .long("default-api-version")
+                .value_name("DEFAULT_API_VERSION")
+                .help("Sets the default version used by the REST API, this will remove the prefix used by its path.")
+                .takes_value(true)
+                .possible_values(&["1"])
+                .default_value("1"),
+        )
+        .arg(
             clap::Arg::with_name("verbose")
                 .short("v")
                 .long("verbose")
@@ -140,5 +159,6 @@ mod tests {
         assert_eq!(mavlink_connection_string(), "udpin:0.0.0.0:14550");
         assert_eq!(server_address(), "0.0.0.0:8088");
         assert_eq!(mavlink_version(), 2);
+        assert_eq!(default_api_version(), 1);
     }
 }
