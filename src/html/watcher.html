@@ -73,13 +73,15 @@
             if (this.messageName !== undefined && jsonData.message.type !== this.messageName) {
               return
             }
-            if (path !== []) {
-              jsonData = path.reduce((a, b)=> a[b], jsonData)
+
+            jsonData = path.reduce((a, b)=> a[b], jsonData)
+            if ('header' in jsonData && 'message' in jsonData) {
+              this.setMessage(jsonData.message)
+            } else {
+              this.setMessage(jsonData)
             }
 
             this.time = new Date()
-            delete jsonData.header
-            this.setMessage(jsonData.message)
           };
 
           this.socket.onclose = (event) => {
