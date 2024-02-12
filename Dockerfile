@@ -19,10 +19,10 @@ ARG TARGET_ARCH=x86_64-unknown-linux-musl
 
 COPY --from=builder /usr/src/mavlink2rest/target/${TARGET_ARCH}/release/mavlink2rest ./mavlink2rest
 
-ENV MAVLINK_SRC="udpin:127.0.0.1:14551"
+ENV MAVLINK_SRC="udpin:0.0.0.0:14550"
 ENV SERVER_PORT="0.0.0.0:8088"
-ENV RUST_BACKTRACE=1
+ENV EXTRA_ARGS=""
 
 RUN chmod +x mavlink2rest
 
-ENTRYPOINT ./mavlink2rest -c ${MAVLINK_SRC} -s ${SERVER_PORT}
+ENTRYPOINT ./mavlink2rest -c ${MAVLINK_SRC} -s ${SERVER_PORT} ${EXTRA_ARGS}

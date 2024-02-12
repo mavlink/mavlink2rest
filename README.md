@@ -51,6 +51,33 @@ OPTIONS:
 
       --system-id <SYSTEM_ID>                Sets system ID for this service. [default: 255]
 ```
+# Using Docker with mavlink2rest
+
+You can also use the `mavlink2rest` with docker, the following command will start the service with the default settings:
+```sh
+docker run --rm --init -p 8088:8088 -p 14550:14550/udp --name mavlink2rest mavlink/mavlink2rest
+```
+
+The Dockerfile defines several environment variables that you can override at runtime:
+
+MAVLINK_SRC: The MAVLink source connection string. Default is udpin:127.0.0.1:14550.
+SERVER_PORT: The IP and port for the REST server. Default is 0.0.0.0:8088.
+EXTRA_ARGS: Any additional command line arguments you want to pass to mavlink2rest.
+To customize these settings, use the -e flag with docker run:
+
+```sh
+docker run --rm --init\
+    -p 8088:8088 \
+    -p 14551:14551/udp \
+    -e MAVLINK_SRC="udpin:0.0.0.0:14551" \
+    -e SERVER_PORT="0.0.0.0:8088" \
+    --name mavlink2rest mavlink/mavlink2rest
+```
+
+to build the docker image locally, you can use the following command:
+```sh
+docker build --build-arg TARGET_ARCH=x86_64-unknown-linux-musl -t mavlink/mavlink2rest .
+```
 
 ## Endpoints
 
