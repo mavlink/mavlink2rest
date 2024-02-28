@@ -129,6 +129,7 @@ impl StreamHandler<Result<ws::Message, ws::ProtocolError>> for WebsocketActor {
                 ctx.text(text);
             }
             Ok(ws::Message::Binary(bin)) => ctx.binary(bin),
+            Ok(ws::Message::Close(msg)) => ctx.close(msg),
             _ => (),
         }
     }
