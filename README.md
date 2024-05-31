@@ -90,20 +90,49 @@ docker build --build-arg TARGET_ARCH=x86_64-unknown-linux-musl -t mavlink/mavlin
 ### API
 * MAVLink JSON:
   * `GET /v1/mavlink|/v1/mavlink/*`. The output is a JSON that you get each nested key individually, E.g:
-    * http://0.0.0.0:8088/v1/mavlink/ATTITUDE
-    * http://0.0.0.0:8088/v1/mavlink/ATTITUDE/roll
-    * http://0.0.0.0:8088/v1/mavlink/ATTITUDE/message_information/time/last_message
-      * Any MAVLink message will contain a normal message definition, as described in `GET /v1/helper/mavlink?name=<MESSAGE_NAME>`, and a **message_information** structure defined as:
-          ```js
-          "message_information": {
-              "counter": 0, // Number of messages received
-              "frequency": 10.0, // Frequency of the received message
-              "time": { // ISO 8601 / RFC 3339 date & time format
-                  "first_message": "2020-03-28T12:47:52.315383-03:00",
-                  "last_message": "2020-03-28T14:16:21.417836-03:00"
-              }
-          }
-          ```
+    * http://0.0.0.0:8088/v1/mavlink/vehicles/1/components/1/messages/ATTITUDE
+    * http://0.0.0.0:8088/v1/mavlink/vehicles/1/components/1/messages/ATTITUDE/roll
+    * http://0.0.0.0:8088/v1/mavlink/vehicles/1/components/1/messages/ATTITUDE/status/time/last_update
+  * Any MAVLink message will contain a normal message definition, as described in `GET /v1/helper/mavlink?name=<MESSAGE_NAME>`..
+    * http://0.0.0.0:8088/v1/helper/mavlink?name=HEARTBEAT
+      ```js
+      {
+        "header": {
+          "system_id": 255,
+          "component_id": 0,
+          "sequence": 0
+        },
+        "message": {
+          "type": "HEARTBEAT",
+          "custom_mode": 0,
+          "mavtype": {
+            "type": "MAV_TYPE_GENERIC"
+          },
+          "autopilot": {
+            "type": "MAV_AUTOPILOT_GENERIC"
+          },
+          "base_mode": {
+            "bits": 128
+          },
+          "system_status": {
+            "type": "MAV_STATE_UNINIT"
+          },
+          "mavlink_version": 0
+        }
+      }
+      ```
+      > :sunglasses: This is really hand when creating messages. 
+  * ... and a **status** structure defined as:
+    ```js
+    "status": {
+      "time": {
+        "counter": 2981,
+        "first_update": "2024-05-31T11:59:44.313941926-03:00",
+        "frequency": 10.037036895751953,
+        "last_update": "2024-05-31T12:04:42.214212884-03:00"
+      }
+    }
+    ```
   * `POST /mavlink`. Sends the message to a specific vehicle.
     * For more information about the MAVLink message definition: https://mavlink.io/en/guide/serialization.html
     * **header**: Is the mavlink header definition with `system_id`, `component_id` and `sequence`.
@@ -158,38 +187,40 @@ docker build --build-arg TARGET_ARCH=x86_64-unknown-linux-musl -t mavlink/mavlin
 
 ##### Get all messages:
   ```sh
-  curl --request GET http://0.0.0.0:8088/v1/mavlink\?pretty\=true
-  # The output is huge, you can get it here: https://gist.github.com/patrickelectric/26a407c4e7749cdaa58d06b52212cb1e
+  curl --request GET http://0.0.0.0:8088/v1/mavlink
+  # The output is huge, you can get it here: [https://gist.github.com/patrickelectric/26a407c4e7749cdaa58d06b52212cb1e](https://gist.github.com/patrickelectric/26a407c4e7749cdaa58d06b52212cb1e)
   ```
 
 ##### Get attitude:
   ```sh
-  curl --request GET http://0.0.0.0:8088/v1/mavlink/ATTITUDE?pretty=true
+  curl --request GET http://0.0.0.0:8088/v1/mavlink/vehicles/1/components/1/messages/ATTITUDE
   ```
   ```js
   {
-    "message_information": {
-      "counter": 46460,
-      "frequency": 7.966392517089844,
-      "time": {
-        "first_message": "2020-03-28T12:47:52.315383-03:00",
-        "last_message": "2020-03-28T14:25:04.905914-03:00"
-      }
+    "message": {
+      "pitch": 0.11506611853837967,
+      "pitchspeed": 0.00003909762017428875,
+      "roll": 0.02339238114655018,
+      "rollspeed": 0.00035849903360940516,
+      "time_boot_ms": 87110407,
+      "type": "ATTITUDE",
+      "yaw": -2.4364013671875,
+      "yawspeed": 0.000020137056708335876
     },
-    "pitch": 0.004207547288388014,
-    "pitchspeed": 0.0010630330070853233,
-    "roll": 0.004168820567429066,
-    "rollspeed": 0.0009180732304230332,
-    "time_boot_ms": 6185568,
-    "type": "ATTITUDE",
-    "yaw": -1.5562472343444824,
-    "yawspeed": 0.0009576341835781932
+    "status": {
+      "time": {
+        "counter": 22750,
+        "first_update": "2024-05-31T11:59:44.313941926-03:00",
+        "frequency": 5.495169162750244,
+        "last_update": "2024-05-31T13:08:45.196118069-03:00"
+      }
+    }
   }
   ````
 
 ##### Get time of last *ATTITUDE* message:
   ```sh
-  curl --request GET http://0.0.0.0:8088/v1/mavlink/ATTITUDE/message_information/time/last_message?pretty=true
+  curl --request GET http://0.0.0.0:8088/v1/mavlink/ATTITUDE/status/time/last_update
   ```
   ```js
   "2020-03-28T14:28:51.577853-03:00"
@@ -197,7 +228,7 @@ docker build --build-arg TARGET_ARCH=x86_64-unknown-linux-musl -t mavlink/mavlin
 
 ##### Get a message structure example:
   ```sh
-  curl --request GET http://0.0.0.0:8088/v1/helper/mavlink?name=ATTITUDE&pretty\=true
+  curl --request GET http://0.0.0.0:8088/v1/helper/mavlink?name=ATTITUDE
   ```
   ```js
   {
