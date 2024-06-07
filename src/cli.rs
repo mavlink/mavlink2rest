@@ -74,6 +74,13 @@ pub fn mavlink_system_and_component_id() -> (u8, u8) {
     (system_id, component_id)
 }
 
+pub fn mavlink_send_initial_heartbeats() -> bool {
+    return MANAGER
+        .as_ref()
+        .clap_matches
+        .is_present("send-initial-heartbeats");
+}
+
 //TODO: Move to the top
 fn get_clap_matches<'a>() -> clap::ArgMatches<'a> {
     let version = format!(
@@ -143,6 +150,12 @@ fn get_clap_matches<'a>() -> clap::ArgMatches<'a> {
                 .short("v")
                 .long("verbose")
                 .help("Be verbose")
+                .takes_value(false),
+        )
+        .arg(
+            clap::Arg::with_name("send-initial-heartbeats")
+                .long("send-initial-heartbeats")
+                .help("Send a burst of initial heartbeats to the autopilot spaced by 0.1 seconds to wake up MAVLink connection (useful for PX4-like autopilots).")
                 .takes_value(false),
         );
 
