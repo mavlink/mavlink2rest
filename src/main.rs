@@ -27,6 +27,7 @@ fn main() -> std::io::Result<()> {
         mavlink_version,
         system_id,
         component_id,
+        cli::mavlink_send_initial_heartbeats(),
     );
 
     let inner_vehicle = vehicle.mavlink_vehicle.clone();
