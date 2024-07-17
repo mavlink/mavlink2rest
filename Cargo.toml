@@ -33,7 +33,7 @@ include_dir = "0.7"
 lazy_static = "1.4.0"
 log = "0.4"
 env_logger = "0.8"
-mavlink = { version = "0.10.7", features = [ "ardupilotmega", "emit-extensions"] }
+mavlink = { version = "0.10.9", features = [ "ardupilotmega", "emit-extensions"] }
 paperclip = { version = "0.8", features = ["actix3", "v3", "paperclip-actix", "swagger-ui"] }
 regex = "1"
 serde = "1.0.115"
