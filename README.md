@@ -1,6 +1,6 @@
 # Mavlink2Rest
-![Build](https://github.com/mavlink/mavlink2rest/workflows/Deploy%20mavlink2rest/badge.svg)
-![Test](https://github.com/mavlink/mavlink2rest/workflows/Test/badge.svg)
+[![Deploy mavlink2rest](https://github.com/mavlink/mavlink2rest/actions/workflows/deploy.yml/badge.svg)](https://github.com/mavlink/mavlink2rest/actions/workflows/deploy.yml)
+[![Test](https://github.com/mavlink/mavlink2rest/actions/workflows/test.yml/badge.svg)](https://github.com/mavlink/mavlink2rest/actions/workflows/test.yml)
 [![Cargo download](https://img.shields.io/crates/d/mavlink2rest)](https://crates.io/crates/mavlink2rest)
 [![Crate info](https://img.shields.io/crates/v/mavlink2rest.svg)](https://crates.io/crates/mavlink2rest)
 [![Documentation](https://docs.rs/mavlink2rest/badge.svg)](https://docs.rs/mavlink2rest)
