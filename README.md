@@ -1,4 +1,5 @@
-# Mavlink2Rest
+![](./doc/logo.png)
+
 [![Deploy mavlink2rest](https://github.com/mavlink/mavlink2rest/actions/workflows/deploy.yml/badge.svg)](https://github.com/mavlink/mavlink2rest/actions/workflows/deploy.yml)
 [![Test](https://github.com/mavlink/mavlink2rest/actions/workflows/test.yml/badge.svg)](https://github.com/mavlink/mavlink2rest/actions/workflows/test.yml)
 [![Cargo download](https://img.shields.io/crates/d/mavlink2rest)](https://crates.io/crates/mavlink2rest)
