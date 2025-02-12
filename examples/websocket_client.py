@@ -5,31 +5,33 @@ import aiohttp
 
 
 async def start_client(url: str) -> None:
-    ws = await aiohttp.ClientSession().ws_connect(url, autoclose=False, autoping=False)
+    print("Connecting to: ", url)
+    async with aiohttp.ClientSession() as session:
+        ws = await session.ws_connect(url, autoclose=False, autoping=False)
 
-    async def dispatch():
-        while True:
-            msg = await ws.receive()
+        async def dispatch():
+            while True:
+                msg = await ws.receive()
 
-            if msg.type == aiohttp.WSMsgType.TEXT:
-                print("Text: ", msg.data.strip())
-            elif msg.type == aiohttp.WSMsgType.BINARY:
-                print("Binary: ", msg.data)
-            elif msg.type == aiohttp.WSMsgType.PING:
-                await ws.pong()
-            elif msg.type == aiohttp.WSMsgType.PONG:
-                print("Pong received")
-            else:
-                if msg.type == aiohttp.WSMsgType.CLOSE:
-                    await ws.close()
-                elif msg.type == aiohttp.WSMsgType.ERROR:
-                    print("Error during receive %s" % ws.exception())
-                elif msg.type == aiohttp.WSMsgType.CLOSED:
-                    pass
+                if msg.type == aiohttp.WSMsgType.TEXT:
+                    print("Text: ", msg.data.strip())
+                elif msg.type == aiohttp.WSMsgType.BINARY:
+                    print("Binary: ", msg.data)
+                elif msg.type == aiohttp.WSMsgType.PING:
+                    await ws.pong()
+                elif msg.type == aiohttp.WSMsgType.PONG:
+                    print("Pong received")
+                else:
+                    if msg.type == aiohttp.WSMsgType.CLOSE:
+                        await ws.close()
+                    elif msg.type == aiohttp.WSMsgType.ERROR:
+                        print("Error during receive %s" % ws.exception())
+                    elif msg.type == aiohttp.WSMsgType.CLOSED:
+                        pass
 
-                break
+                    break
 
-    await dispatch()
+        await dispatch()
 
 
 ARGS = argparse.ArgumentParser(
@@ -56,6 +58,6 @@ if __name__ == "__main__":
     loop = asyncio.new_event_loop()
     loop.run_until_complete(
         start_client(
-            args.url + "v1/ws/mavlink" + f"?filter={args.filter}"
+            f"{args.url}/v1/ws/mavlink?filter={args.filter}"
         )
     )
