@@ -71,19 +71,6 @@ fn ws_callback(
         }
 
         format!("{result:?}")
-    } else if let Ok(content @ MAVLinkMessage::<mavlink::common::MavMessage> { .. }) =
-        serde_json::from_str(value)
-    {
-        let content_ardupilotmega = mavlink::ardupilotmega::MavMessage::common(content.message);
-        let result = inner_vehicle
-            .lock()
-            .unwrap()
-            .send(&content.header, &content_ardupilotmega);
-        if result.is_ok() {
-            data::update((content.header, content_ardupilotmega));
-        }
-
-        format!("{result:?}")
     } else {
         String::from("Could not convert input message.")
     }
