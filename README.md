@@ -2,6 +2,7 @@
 
 [![Deploy mavlink2rest](https://github.com/mavlink/mavlink2rest/actions/workflows/deploy.yml/badge.svg)](https://github.com/mavlink/mavlink2rest/actions/workflows/deploy.yml)
 [![Test](https://github.com/mavlink/mavlink2rest/actions/workflows/test.yml/badge.svg)](https://github.com/mavlink/mavlink2rest/actions/workflows/test.yml)
+[![Docker image (GHCR): ghcr.io/mavlink/mavlink2rest](https://img.shields.io/badge/docker-ghcr.io%2Fmavlink%2Fmavlink2rest-2496ED?logo=docker&logoColor=white)](https://github.com/mavlink/mavlink2rest/pkgs/container/mavlink2rest)
 [![Cargo download](https://img.shields.io/crates/d/mavlink2rest)](https://crates.io/crates/mavlink2rest)
 [![Crate info](https://img.shields.io/crates/v/mavlink2rest.svg)](https://crates.io/crates/mavlink2rest)
 [![Documentation](https://docs.rs/mavlink2rest/badge.svg)](https://docs.rs/mavlink2rest)
@@ -122,7 +123,7 @@ docker build --build-arg TARGET_ARCH=x86_64-unknown-linux-musl -t mavlink/mavlin
         }
       }
       ```
-      > :sunglasses: This is really hand when creating messages. 
+      > :sunglasses: This is really hand when creating messages.
   * ... and a **status** structure defined as:
     ```js
     "status": {
