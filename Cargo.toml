@@ -20,27 +20,28 @@ name = "mavlink2rest"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-actix = "0.10"
-actix-cors = "0.5"
-actix-files = "0.6.2"
-actix-rt = "2.1"
-actix-web = "3.3"
-actix-web-actors = "3.0"
-chrono = { version = "0.4", features = ["serde"] }
-clap = "2.33.3"
-derivative = "2.1.1"
-include_dir = "0.7"
-lazy_static = "1.4.0"
-log = "0.4"
-env_logger = "0.8"
-mavlink = { version = "0.16.1", features = [ "ardupilotmega", "emit-extensions"] }
-paperclip = { version = "0.8", features = ["actix3", "v3", "paperclip-actix", "swagger-ui"] }
-regex = "1"
-serde = "1.0.115"
-serde_derive = "1.0.115"
-serde_json = "1.0.57"
-json5 = "0.4.1"
+actix = { version = "0.10", default-features = false }
+actix-cors = { version = "0.5", default-features = false }
+actix-files = { version = "0.6.2", default-features = false }
+actix-rt = { version = "2.1", default-features = false }
+actix-web = { version = "3.3", default-features = false }
+actix-web-actors = { version = "3.0", default-features = false }
+chrono = { version = "0.4", default-features = false, features = ["serde", "std", "clock"] }
+clap = { version = "2.33.3", default-features = false, features = ["suggestions", "color", "wrap_help"] }
+derivative = { version = "2.1.1", default-features = false }
+include_dir = { version = "0.7", default-features = false }
+lazy_static = { version = "1.4.0", default-features = false }
+log = { version = "0.4", default-features = false }
+env_logger = { version = "0.8", default-features = false, features = ["regex", "termcolor", "humantime", "atty"] }
+mavlink = { version = "0.16.1", default-features = false, features = ["std", "serde", "ardupilotmega", "emit-extensions"] }
+paperclip = { version = "0.8", default-features = false, features = ["actix3", "v3", "paperclip-actix", "swagger-ui"] }
+regex = { version = "1", default-features = false, features = ["std"] }
+serde = { version = "1.0.115", default-features = false, features = ["std"] }
+serde_derive = { version = "1.0.115", default-features = false }
+serde_json = { version = "1.0.57", default-features = false, features = ["std"] }
+json5 = { version = "0.4.1", default-features = false }
 
 [build-dependencies]
 reqwest = {version = "0.11", default-features = false, features = ["blocking", "rustls-tls"]}
-vergen = { version = "7", features = ["git"] }
+vergen = { version = "7", default-features = false, features = ["git", "build"] }
+
