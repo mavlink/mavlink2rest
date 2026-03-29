@@ -277,7 +277,7 @@ docker build --build-arg TARGET_ARCH=x86_64-unknown-linux-musl -t mavlink/mavlin
 
 ##### Request vehicle to be [disarmed](https://mavlink.io/en/messages/common.html#MAV_CMD_COMPONENT_ARM_DISARM):
   ```sh
-  # ARM: param1 is 0.0
+  # DISARM: param1 is 0.0
   curl --request POST http://0.0.0.0:8088/v1/mavlink -H "Content-Type: application/json" --data \
   '{
     "header": {
