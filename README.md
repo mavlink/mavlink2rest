@@ -112,13 +112,11 @@ docker build --build-arg TARGET_ARCH=x86_64-unknown-linux-musl -t mavlink/mavlin
           "autopilot": {
             "type": "MAV_AUTOPILOT_GENERIC"
           },
-          "base_mode": {
-            "bits": 128
-          },
+          "base_mode": "MAV_MODE_FLAG_SAFETY_ARMED",
           "system_status": {
             "type": "MAV_STATE_UNINIT"
           },
-          "mavlink_version": 0
+          "mavlink_version": 3
         }
       }
       ```
