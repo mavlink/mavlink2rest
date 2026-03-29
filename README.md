@@ -134,7 +134,7 @@ docker build --build-arg TARGET_ARCH=x86_64-unknown-linux-musl -t mavlink/mavlin
       }
     }
     ```
-  * `POST /mavlink`. Sends the message to a specific vehicle.
+  * `POST /v1/mavlink`. Sends the message to a specific vehicle.
     * For more information about the MAVLink message definition: https://mavlink.io/en/guide/serialization.html
     * **header**: Is the mavlink header definition with `system_id`, `component_id` and `sequence`.
     * **message**: A valid mavlink [message](https://mavlink.io/en/messages/common.html), for more information check `GET /v1/helper/mavlink?name=<MESSAGE_NAME>`.
@@ -229,7 +229,7 @@ docker build --build-arg TARGET_ARCH=x86_64-unknown-linux-musl -t mavlink/mavlin
 
 ##### Get a message structure example:
   ```sh
-  curl --request GET http://0.0.0.0:8088/v1/helper/mavlink?name=ATTITUDE
+  curl --request GET "http://0.0.0.0:8088/v1/helper/mavlink?name=ATTITUDE"
   ```
   ```js
   {
