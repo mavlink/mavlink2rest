@@ -92,7 +92,7 @@ docker build --build-arg TARGET_ARCH=x86_64-unknown-linux-musl -t mavlink/mavlin
 * MAVLink JSON:
   * `GET /v1/mavlink|/v1/mavlink/*`. The output is a JSON that you get each nested key individually, E.g:
     * http://0.0.0.0:8088/v1/mavlink/vehicles/1/components/1/messages/ATTITUDE
-    * http://0.0.0.0:8088/v1/mavlink/vehicles/1/components/1/messages/ATTITUDE/roll
+    * http://0.0.0.0:8088/v1/mavlink/vehicles/1/components/1/messages/ATTITUDE/message/roll
     * http://0.0.0.0:8088/v1/mavlink/vehicles/1/components/1/messages/ATTITUDE/status/time/last_update
   * Any MAVLink message will contain a normal message definition, as described in `GET /v1/helper/mavlink?name=<MESSAGE_NAME>`..
     * http://0.0.0.0:8088/v1/helper/mavlink?name=HEARTBEAT
