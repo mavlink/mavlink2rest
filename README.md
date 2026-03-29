@@ -298,7 +298,7 @@ docker build --build-arg TARGET_ARCH=x86_64-unknown-linux-musl -t mavlink/mavlin
   ```
 
 > Note: For any invalid `GET`, you'll receive a 404 response with the error message.
-> Note: The endpoints that allow `GET` and provides a JSON output, also allow the usage of the query parameter `pretty` with a boolean value `true` or `false`, E.g: http://0.0.0.0:8088/helper/mavlink?name=COMMAND_LONG&pretty=true
+> Note: All JSON responses are pretty-printed by default.
 
 ### Websocket
 
