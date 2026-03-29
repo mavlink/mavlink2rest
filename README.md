@@ -221,10 +221,10 @@ docker build --build-arg TARGET_ARCH=x86_64-unknown-linux-musl -t mavlink/mavlin
 
 ##### Get time of last *ATTITUDE* message:
   ```sh
-  curl --request GET http://0.0.0.0:8088/v1/mavlink/ATTITUDE/status/time/last_update
+  curl --request GET http://0.0.0.0:8088/v1/mavlink/vehicles/1/components/1/messages/ATTITUDE/status/time/last_update
   ```
   ```js
-  "2020-03-28T14:28:51.577853-03:00"
+  "2026-03-29T07:14:29.700718126-03:00"
   ```
 
 ##### Get a message structure example:
