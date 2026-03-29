@@ -98,6 +98,16 @@ pub async fn info() -> Json<Info> {
 }
 
 #[api_v2_operation]
+/// Provide instructions on how to use this API
+pub async fn llm() -> actix_web::Result<HttpResponse> {
+    let content = load_html_file("llm").unwrap();
+    HttpResponse::Ok()
+        .content_type("text/plain")
+        .body(content)
+        .await
+}
+
+#[api_v2_operation]
 /// Provides an object containing all MAVLink messages received by the service
 pub async fn mavlink(req: HttpRequest) -> actix_web::Result<HttpResponse> {
     let path = req.match_info().query("path");

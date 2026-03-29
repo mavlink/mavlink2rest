@@ -27,6 +27,7 @@ fn add_v1_paths(scope: Scope) -> Scope {
         .route("/mavlink", web::get().to(endpoints::mavlink))
         .route("/mavlink", web::post().to(endpoints::mavlink_post))
         .route(r"/mavlink/{path:.*}", web::get().to(endpoints::mavlink))
+        .route("/llm", web::get().to(endpoints::llm))
         .service(web::resource("/ws/mavlink").route(web::get().to(endpoints::websocket)))
 }
 

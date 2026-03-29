@@ -1,0 +1,356 @@
+# mavlink2rest API Reference
+
+mavlink2rest exposes a RESTful API over the MAVLink protocol.
+Supports the ardupilotmega MAVLink dialect (includes common, icarous, uavionix).
+All JSON responses are pretty-printed.
+
+You are reading this file from the /llm endpoint.
+The base URL for all API requests is the same origin as this endpoint.
+For example, if you accessed this file at http://192.168.0.10:8088/llm,
+then the base URL for all examples below is http://192.168.0.10:8088.
+Replace http://0.0.0.0:8088 in the examples with your actual address.
+
+## Data Model
+
+Messages are organized hierarchically:
+  vehicles/{system_id}/components/{component_id}/messages/{MESSAGE_NAME}
+
+Each message entry contains:
+  - message: the MAVLink message fields
+  - status.time.first_update: ISO 8601 timestamp of first reception
+  - status.time.last_update: ISO 8601 timestamp of last reception
+  - status.time.counter: number of times received
+  - status.time.frequency: reception rate in Hz
+
+## Endpoints
+
+### GET /v1/mavlink
+Returns all MAVLink messages from all vehicles and components.
+
+Example:
+  curl http://0.0.0.0:8088/v1/mavlink
+
+### GET /v1/mavlink/{path}
+Returns a specific nested value using JSON pointer-style path traversal.
+
+Examples:
+  # Full ATTITUDE message with status
+  curl http://0.0.0.0:8088/v1/mavlink/vehicles/1/components/1/messages/ATTITUDE
+
+  # Single field (note: fields are under "message/")
+  curl http://0.0.0.0:8088/v1/mavlink/vehicles/1/components/1/messages/ATTITUDE/message/roll
+  Returns: 0.14598171412944794
+
+  # Status metadata
+  curl http://0.0.0.0:8088/v1/mavlink/vehicles/1/components/1/messages/ATTITUDE/status/time/frequency
+  Returns: 10.047618865966797
+
+  # Last update timestamp
+  curl http://0.0.0.0:8088/v1/mavlink/vehicles/1/components/1/messages/ATTITUDE/status/time/last_update
+  Returns: "2026-03-29T07:14:29.700718126-03:00"
+
+Response for a full message (GET .../messages/ATTITUDE):
+{
+  "message": {
+    "type": "ATTITUDE",
+    "time_boot_ms": 49624892,
+    "roll": 0.14528612792491913,
+    "pitch": 0.012282482348382473,
+    "yaw": -2.570211410522461,
+    "rollspeed": -0.00008160166908055544,
+    "pitchspeed": -0.0007044915109872818,
+    "yawspeed": -0.00017313705757260323
+  },
+  "status": {
+    "time": {
+      "first_update": "2026-03-29T07:10:52.701061519-03:00",
+      "last_update": "2026-03-29T07:14:19.980848695-03:00",
+      "counter": 2075,
+      "frequency": 10.024154663085938
+    }
+  }
+}
+
+Invalid paths return the string "None" with HTTP 200.
+
+### GET /v1/helper/mavlink?name={MESSAGE_NAME}
+Returns a JSON template for any MAVLink message with default values.
+Use this to discover the correct JSON structure before POSTing.
+
+Examples:
+  curl "http://0.0.0.0:8088/v1/helper/mavlink?name=HEARTBEAT"
+  curl "http://0.0.0.0:8088/v1/helper/mavlink?name=COMMAND_LONG"
+  curl "http://0.0.0.0:8088/v1/helper/mavlink?name=COMMAND_INT"
+  curl "http://0.0.0.0:8088/v1/helper/mavlink?name=PARAM_SET"
+  curl "http://0.0.0.0:8088/v1/helper/mavlink?name=MANUAL_CONTROL"
+
+Response for COMMAND_LONG:
+{
+  "header": {
+    "system_id": 255,
+    "component_id": 0,
+    "sequence": 0
+  },
+  "message": {
+    "type": "COMMAND_LONG",
+    "param1": 0.0,
+    "param2": 0.0,
+    "param3": 0.0,
+    "param4": 0.0,
+    "param5": 0.0,
+    "param6": 0.0,
+    "param7": 0.0,
+    "command": {
+      "type": "MAV_CMD_NAV_WAYPOINT"
+    },
+    "target_system": 0,
+    "target_component": 0,
+    "confirmation": 0
+  }
+}
+
+Invalid message names return HTTP 404 with "Invalid message name."
+
+### POST /v1/mavlink
+Sends a MAVLink message to the vehicle. The body must be a JSON object with
+"header" and "message" fields matching the structure from the helper endpoint.
+
+The "header" fields:
+  - system_id: sender system ID (typically 255 for a GCS)
+  - component_id: sender component ID (typically 0 or 240 for a GCS)
+  - sequence: message sequence number (typically 0)
+
+The "message" must include:
+  - type: the MAVLink message type name (e.g. "COMMAND_LONG")
+  - All required fields for that message type
+
+Returns HTTP 200 on success, HTTP 404 with error details on failure.
+
+#### Example: Arm the vehicle
+curl -X POST http://0.0.0.0:8088/v1/mavlink \
+  -H "Content-Type: application/json" \
+  -d '{
+    "header": {
+      "system_id": 255,
+      "component_id": 0,
+      "sequence": 0
+    },
+    "message": {
+      "type": "COMMAND_LONG",
+      "param1": 1.0,
+      "param2": 0.0,
+      "param3": 0.0,
+      "param4": 0.0,
+      "param5": 0.0,
+      "param6": 0.0,
+      "param7": 0.0,
+      "command": {
+        "type": "MAV_CMD_COMPONENT_ARM_DISARM"
+      },
+      "target_system": 1,
+      "target_component": 1,
+      "confirmation": 0
+    }
+  }'
+
+#### Example: Disarm the vehicle
+curl -X POST http://0.0.0.0:8088/v1/mavlink \
+  -H "Content-Type: application/json" \
+  -d '{
+    "header": {
+      "system_id": 255,
+      "component_id": 0,
+      "sequence": 0
+    },
+    "message": {
+      "type": "COMMAND_LONG",
+      "param1": 0.0,
+      "param2": 0.0,
+      "param3": 0.0,
+      "param4": 0.0,
+      "param5": 0.0,
+      "param6": 0.0,
+      "param7": 0.0,
+      "command": {
+        "type": "MAV_CMD_COMPONENT_ARM_DISARM"
+      },
+      "target_system": 1,
+      "target_component": 1,
+      "confirmation": 0
+    }
+  }'
+
+#### Example: Set flight mode (e.g. MANUAL mode = custom_mode 19 for ArduSub)
+curl -X POST http://0.0.0.0:8088/v1/mavlink \
+  -H "Content-Type: application/json" \
+  -d '{
+    "header": {
+      "system_id": 255,
+      "component_id": 0,
+      "sequence": 0
+    },
+    "message": {
+      "type": "COMMAND_LONG",
+      "param1": 19.0,
+      "param2": 0.0,
+      "param3": 0.0,
+      "param4": 0.0,
+      "param5": 0.0,
+      "param6": 0.0,
+      "param7": 0.0,
+      "command": {
+        "type": "MAV_CMD_DO_SET_MODE"
+      },
+      "target_system": 1,
+      "target_component": 1,
+      "confirmation": 0
+    }
+  }'
+
+#### Example: Set a parameter
+curl -X POST http://0.0.0.0:8088/v1/mavlink \
+  -H "Content-Type: application/json" \
+  -d '{
+    "header": {
+      "system_id": 255,
+      "component_id": 0,
+      "sequence": 0
+    },
+    "message": {
+      "type": "PARAM_SET",
+      "param_value": 1.0,
+      "target_system": 1,
+      "target_component": 1,
+      "param_id": "SURFACE_DEPTH",
+      "param_type": {
+        "type": "MAV_PARAM_TYPE_REAL32"
+      }
+    }
+  }'
+
+#### Example: Send manual control input
+curl -X POST http://0.0.0.0:8088/v1/mavlink \
+  -H "Content-Type: application/json" \
+  -d '{
+    "header": {
+      "system_id": 255,
+      "component_id": 0,
+      "sequence": 0
+    },
+    "message": {
+      "type": "MANUAL_CONTROL",
+      "x": 0,
+      "y": 0,
+      "z": 500,
+      "r": 0,
+      "buttons": 0,
+      "target": 1,
+      "buttons2": 0,
+      "enabled_extensions": 0,
+      "s": 0,
+      "t": 0,
+      "aux1": 0,
+      "aux2": 0,
+      "aux3": 0,
+      "aux4": 0,
+      "aux5": 0,
+      "aux6": 0
+    }
+  }'
+
+#### Example: Request all parameters from the vehicle
+curl -X POST http://0.0.0.0:8088/v1/mavlink \
+  -H "Content-Type: application/json" \
+  -d '{
+    "header": {
+      "system_id": 255,
+      "component_id": 0,
+      "sequence": 0
+    },
+    "message": {
+      "type": "PARAM_REQUEST_LIST",
+      "target_system": 1,
+      "target_component": 1
+    }
+  }'
+
+### GET /info
+Returns service version information.
+
+Example:
+  curl http://0.0.0.0:8088/info
+
+Response:
+{
+  "version": 0,
+  "service": {
+    "name": "mavlink2rest",
+    "version": "1.0.0",
+    "sha": "8c5df007c2726af9db3ef98f6e12d5400ba2e718",
+    "build_date": "2026-03-29T10:05:39.95884241Z",
+    "authors": "Patrick José Pereira <patrickelectric@gmail.com>"
+  }
+}
+
+### WebSocket: /v1/ws/mavlink
+Streams MAVLink messages in real-time over WebSocket.
+Accepts an optional "filter" query parameter with a regex to match message names.
+
+  ws://0.0.0.0:8088/v1/ws/mavlink              # all messages
+  ws://0.0.0.0:8088/v1/ws/mavlink?filter=.*     # all messages (explicit)
+  ws://0.0.0.0:8088/v1/ws/mavlink?filter=ATTITUDE  # only ATTITUDE
+  ws://0.0.0.0:8088/v1/ws/mavlink?filter=RC_.*  # RC_CHANNELS and RC_CHANNELS_RAW
+
+Each WebSocket frame is a JSON object with "header" and "message":
+{
+  "header": {
+    "system_id": 1,
+    "component_id": 1,
+    "sequence": 37
+  },
+  "message": {
+    "type": "RC_CHANNELS",
+    "chan1_raw": 1500,
+    "chan2_raw": 1500,
+    ...
+  }
+}
+
+You can also send MAVLink messages through the WebSocket by writing a JSON
+string in the same header+message format. The server will forward it to the
+vehicle and reply with the result.
+
+### GET /docs
+Interactive Swagger UI for exploring the API.
+
+### GET /docs.json
+Raw OpenAPI/Swagger 2.0 specification in JSON format.
+
+## Common Patterns
+
+### Discovering available vehicles and messages
+1. GET /v1/mavlink to see all vehicles, components, and messages.
+2. Navigate the hierarchy: vehicles/{id}/components/{id}/messages/{name}
+
+### Sending a command to the vehicle
+1. GET /v1/helper/mavlink?name=COMMAND_LONG to get the template.
+2. Fill in: command.type, param1-param7, target_system, target_component.
+3. POST /v1/mavlink with the filled-in JSON.
+
+### Monitoring a value in real-time
+Option A (polling): GET /v1/mavlink/vehicles/1/components/1/messages/{MSG}/message/{field}
+Option B (streaming): Connect a WebSocket to /v1/ws/mavlink?filter={MSG}
+
+### Getting a message template for any MAVLink message
+GET /v1/helper/mavlink?name={MESSAGE_NAME}
+Replace {MESSAGE_NAME} with any valid ardupilotmega message name, e.g.:
+HEARTBEAT, ATTITUDE, COMMAND_LONG, COMMAND_INT, PARAM_SET,
+MANUAL_CONTROL, PARAM_REQUEST_LIST, SET_MODE, GPS_RAW_INT,
+GLOBAL_POSITION_INT, BATTERY_STATUS, SYS_STATUS, RC_CHANNELS,
+MISSION_ITEM, MISSION_COUNT, MISSION_REQUEST_LIST, etc.
+
+## Notes
+- Enum fields use {"type": "ENUM_VALUE_NAME"} format (e.g. {"type": "MAV_CMD_COMPONENT_ARM_DISARM"}).
+- Bitfield fields use pipe-separated strings (e.g. "MAV_MODE_FLAG_SAFETY_ARMED | MAV_MODE_FLAG_CUSTOM_MODE_ENABLED").
+- The POST endpoint accepts JSON5 (allows comments and trailing commas).
+- All endpoints under /v1/ are also available without the prefix (e.g. /mavlink works the same as /v1/mavlink).
