@@ -112,7 +112,7 @@ pub fn parse_query<T: serde::ser::Serialize>(message: &T) -> String {
 }
 
 #[api_v2_operation]
-/// Returns a MAVLink message matching the given message name
+/// Returns an example of a MAVLink message matching the given message name
 pub async fn helper_mavlink(
     _req: HttpRequest,
     query: web::Query<MAVLinkHelperQuery>,
