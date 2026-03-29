@@ -122,7 +122,7 @@ docker build --build-arg TARGET_ARCH=x86_64-unknown-linux-musl -t mavlink/mavlin
         }
       }
       ```
-      > :sunglasses: This is really hand when creating messages. 
+      > :sunglasses: This is really handy when creating messages. 
   * ... and a **status** structure defined as:
     ```js
     "status": {
