@@ -302,7 +302,14 @@ docker build --build-arg TARGET_ARCH=x86_64-unknown-linux-musl -t mavlink/mavlin
 
 ### Websocket
 
-It's also possible to connect multiple websockets with the following path `/ws/mavlink`, the endpoint also accepts the query parameter `filter`, the filter value should be a regex that matches MAVLink message names, E.g: `/ws/mavlink?filter=.*` for all messages, `/ws/mavlink?filter=RC_.*` will match **RC_CHANNELS_RAW** and **RC_CHANNELS**, resulting in the following output:
+It's also possible to connect multiple websockets with the following path `/v1/ws/mavlink`, the endpoint also accepts the query parameter `filter`, the filter value should be a regex that matches MAVLink message names, E.g: `/v1/ws/mavlink?filter=.*` for all messages, `/v1/ws/mavlink?filter=RC_.*` will match **RC_CHANNELS_RAW** and **RC_CHANNELS**.
+
+You can test websockets using [websocat](https://github.com/vi/websocat):
+  ```sh
+  websocat "ws://0.0.0.0:8088/v1/ws/mavlink?filter=RC_.*"
+  ```
+
+  Example output:
   ```json
   { // First message
     "header": {
