@@ -60,7 +60,7 @@ fn ws_callback(
     value: &str,
 ) -> String {
     if let Ok(content @ MAVLinkMessage::<mavlink::ardupilotmega::MavMessage> { .. }) =
-        serde_json::from_str(value)
+        json5::from_str(value)
     {
         let result = inner_vehicle
             .lock()
@@ -72,7 +72,7 @@ fn ws_callback(
 
         format!("{result:?}")
     } else if let Ok(content @ MAVLinkMessage::<mavlink::common::MavMessage> { .. }) =
-        serde_json::from_str(value)
+        json5::from_str(value)
     {
         let content_ardupilotmega = mavlink::ardupilotmega::MavMessage::common(content.message);
         let result = inner_vehicle
