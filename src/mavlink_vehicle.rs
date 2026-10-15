@@ -2,13 +2,15 @@ use std::sync::{mpsc, Arc, Mutex};
 
 use log::*;
 
+use mavlink::{Connection, MavConnection};
+
 pub type MAVLinkVehicleArcMutex =
     Arc<Mutex<MAVLinkVehicle<mavlink::dialects::ardupilotmega::MavMessage>>>;
 
 #[derive(Clone)]
 pub struct MAVLinkVehicle<M: mavlink::Message> {
     //TODO: Check if Arc<Box can be only Arc or Box
-    vehicle: Arc<Box<dyn mavlink::MavConnection<M> + Sync + Send>>,
+    vehicle: Arc<Connection<M>>,
     header: Arc<Mutex<mavlink::MavHeader>>,
 }
 
