@@ -2,7 +2,8 @@ use std::sync::{mpsc, Arc, Mutex};
 
 use log::*;
 
-pub type MAVLinkVehicleArcMutex = Arc<Mutex<MAVLinkVehicle<mavlink::ardupilotmega::MavMessage>>>;
+pub type MAVLinkVehicleArcMutex =
+    Arc<Mutex<MAVLinkVehicle<mavlink::dialects::ardupilotmega::MavMessage>>>;
 
 #[derive(Clone)]
 pub struct MAVLinkVehicle<M: mavlink::Message> {
@@ -59,7 +60,7 @@ impl<M: mavlink::Message + Send + Sync> MAVLinkVehicle<M> {
     }
 }
 
-impl MAVLinkVehicleHandle<mavlink::ardupilotmega::MavMessage> {
+impl MAVLinkVehicleHandle<mavlink::dialects::ardupilotmega::MavMessage> {
     pub fn new(
         connection_string: &str,
         version: mavlink::MavlinkVersion,
@@ -67,15 +68,16 @@ impl MAVLinkVehicleHandle<mavlink::ardupilotmega::MavMessage> {
         component_id: u8,
         send_initial_heartbeats: bool,
     ) -> Self {
-        let mavlink_vehicle: Arc<Mutex<MAVLinkVehicle<mavlink::ardupilotmega::MavMessage>>> =
-            Arc::new(Mutex::new(MAVLinkVehicle::<
-                mavlink::ardupilotmega::MavMessage,
-            >::new(
-                connection_string,
-                version,
-                system_id,
-                component_id,
-            )));
+        let mavlink_vehicle: Arc<
+            Mutex<MAVLinkVehicle<mavlink::dialects::ardupilotmega::MavMessage>>,
+        > = Arc::new(Mutex::new(MAVLinkVehicle::<
+            mavlink::dialects::ardupilotmega::MavMessage,
+        >::new(
+            connection_string,
+            version,
+            system_id,
+            component_id,
+        )));
 
         // PX4 requires a initial heartbeat to be sent to wake up the connection, otherwise it will
         // not send any messages
@@ -95,8 +97,10 @@ impl MAVLinkVehicleHandle<mavlink::ardupilotmega::MavMessage> {
         let heartbeat_mavlink_vehicle = mavlink_vehicle.clone();
         let receive_message_mavlink_vehicle = mavlink_vehicle.clone();
 
-        let (tx_channel, rx_channel) =
-            mpsc::channel::<(mavlink::MavHeader, mavlink::ardupilotmega::MavMessage)>();
+        let (tx_channel, rx_channel) = mpsc::channel::<(
+            mavlink::MavHeader,
+            mavlink::dialects::ardupilotmega::MavMessage,
+        )>();
 
         Self {
             mavlink_vehicle,
@@ -110,8 +114,11 @@ impl MAVLinkVehicleHandle<mavlink::ardupilotmega::MavMessage> {
 }
 
 fn receive_message_loop(
-    mavlink_vehicle: Arc<Mutex<MAVLinkVehicle<mavlink::ardupilotmega::MavMessage>>>,
-    channel: std::sync::mpsc::Sender<(mavlink::MavHeader, mavlink::ardupilotmega::MavMessage)>,
+    mavlink_vehicle: Arc<Mutex<MAVLinkVehicle<mavlink::dialects::ardupilotmega::MavMessage>>>,
+    channel: std::sync::mpsc::Sender<(
+        mavlink::MavHeader,
+        mavlink::dialects::ardupilotmega::MavMessage,
+    )>,
 ) {
     let mavlink_vehicle = mavlink_vehicle.as_ref().lock().unwrap();
 
@@ -138,7 +145,9 @@ fn receive_message_loop(
     }
 }
 
-fn send_heartbeat(mavlink_vehicle: Arc<Mutex<MAVLinkVehicle<mavlink::ardupilotmega::MavMessage>>>) {
+fn send_heartbeat(
+    mavlink_vehicle: Arc<Mutex<MAVLinkVehicle<mavlink::dialects::ardupilotmega::MavMessage>>>,
+) {
     let mavlink_vehicle = mavlink_vehicle.as_ref().lock().unwrap();
     let vehicle = mavlink_vehicle.vehicle.clone();
     let mut header = mavlink_vehicle.header.lock().unwrap();
@@ -148,20 +157,24 @@ fn send_heartbeat(mavlink_vehicle: Arc<Mutex<MAVLinkVehicle<mavlink::ardupilotme
     header.sequence = header.sequence.wrapping_add(1);
 }
 
-fn heartbeat_loop(mavlink_vehicle: Arc<Mutex<MAVLinkVehicle<mavlink::ardupilotmega::MavMessage>>>) {
+fn heartbeat_loop(
+    mavlink_vehicle: Arc<Mutex<MAVLinkVehicle<mavlink::dialects::ardupilotmega::MavMessage>>>,
+) {
     loop {
         std::thread::sleep(std::time::Duration::from_secs(1));
         send_heartbeat(mavlink_vehicle.clone());
     }
 }
 
-pub fn heartbeat_message() -> mavlink::ardupilotmega::MavMessage {
-    mavlink::ardupilotmega::MavMessage::HEARTBEAT(mavlink::ardupilotmega::HEARTBEAT_DATA {
-        custom_mode: 0,
-        mavtype: mavlink::ardupilotmega::MavType::MAV_TYPE_ONBOARD_CONTROLLER,
-        autopilot: mavlink::ardupilotmega::MavAutopilot::MAV_AUTOPILOT_INVALID,
-        base_mode: mavlink::ardupilotmega::MavModeFlag::default(),
-        system_status: mavlink::ardupilotmega::MavState::MAV_STATE_STANDBY,
-        mavlink_version: 0x3,
-    })
+pub fn heartbeat_message() -> mavlink::dialects::ardupilotmega::MavMessage {
+    mavlink::dialects::ardupilotmega::MavMessage::HEARTBEAT(
+        mavlink::dialects::ardupilotmega::HEARTBEAT_DATA {
+            custom_mode: 0,
+            mavtype: mavlink::dialects::ardupilotmega::MavType::MAV_TYPE_ONBOARD_CONTROLLER,
+            autopilot: mavlink::dialects::ardupilotmega::MavAutopilot::MAV_AUTOPILOT_INVALID,
+            base_mode: mavlink::dialects::ardupilotmega::MavModeFlag::default(),
+            system_status: mavlink::dialects::ardupilotmega::MavState::MAV_STATE_STANDBY,
+            mavlink_version: 0x3,
+        },
+    )
 }

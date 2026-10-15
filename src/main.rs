@@ -22,13 +22,14 @@ fn main() -> std::io::Result<()> {
     };
 
     let (system_id, component_id) = cli::mavlink_system_and_component_id();
-    let vehicle = mavlink_vehicle::MAVLinkVehicleHandle::<mavlink::ardupilotmega::MavMessage>::new(
-        cli::mavlink_connection_string(),
-        mavlink_version,
-        system_id,
-        component_id,
-        cli::mavlink_send_initial_heartbeats(),
-    );
+    let vehicle =
+        mavlink_vehicle::MAVLinkVehicleHandle::<mavlink::dialects::ardupilotmega::MavMessage>::new(
+            cli::mavlink_connection_string(),
+            mavlink_version,
+            system_id,
+            component_id,
+            cli::mavlink_send_initial_heartbeats(),
+        );
 
     let inner_vehicle = vehicle.mavlink_vehicle.clone();
     server::run(cli::server_address(), &inner_vehicle);
@@ -56,10 +57,12 @@ fn main() -> std::io::Result<()> {
 }
 
 fn ws_callback(
-    inner_vehicle: Arc<Mutex<mavlink_vehicle::MAVLinkVehicle<mavlink::ardupilotmega::MavMessage>>>,
+    inner_vehicle: Arc<
+        Mutex<mavlink_vehicle::MAVLinkVehicle<mavlink::dialects::ardupilotmega::MavMessage>>,
+    >,
     value: &str,
 ) -> String {
-    if let Ok(content @ MAVLinkMessage::<mavlink::ardupilotmega::MavMessage> { .. }) =
+    if let Ok(content @ MAVLinkMessage::<mavlink::dialects::ardupilotmega::MavMessage> { .. }) =
         serde_json::from_str(value)
     {
         let result = inner_vehicle
