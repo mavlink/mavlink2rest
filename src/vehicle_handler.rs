@@ -10,7 +10,7 @@ use crate::message_information::MessageInformation;
 pub struct InnerVehicle {
     pub channel: Arc<
         Box<
-            (dyn mavlink::MavConnection<mavlink::ardupilotmega::MavMessage>
+            (dyn mavlink::MavConnection<mavlink::dialects::ardupilotmega::MavMessage>
                  + std::marker::Send
                  + std::marker::Sync
                  + 'static),
@@ -118,8 +118,8 @@ impl InnerVehicle {
         });
     }
 
-    pub fn heartbeat_message() -> mavlink::ardupilotmega::MavMessage {
-        mavlink::ardupilotmega::MavMessage::common({
+    pub fn heartbeat_message() -> mavlink::dialects::ardupilotmega::MavMessage {
+        mavlink::dialects::ardupilotmega::MavMessage::common({
             mavlink::common::MavMessage::HEARTBEAT(mavlink::common::HEARTBEAT_DATA {
                 custom_mode: 0,
                 mavtype: mavlink::common::MavType::MAV_TYPE_QUADROTOR, // TODO: Move this to something else
@@ -131,8 +131,8 @@ impl InnerVehicle {
         })
     }
 
-    pub fn request_stream() -> mavlink::ardupilotmega::MavMessage {
-        mavlink::ardupilotmega::MavMessage::common({
+    pub fn request_stream() -> mavlink::dialects::ardupilotmega::MavMessage {
+        mavlink::dialects::ardupilotmega::MavMessage::common({
             mavlink::common::MavMessage::REQUEST_DATA_STREAM(
                 mavlink::common::REQUEST_DATA_STREAM_DATA {
                     target_system: 0,

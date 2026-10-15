@@ -54,12 +54,12 @@ pub struct MAVLinkMessage<T> {
 
 #[derive(Clone, Debug, Deserialize, Serialize)]
 struct MAVLinkMessageStatus {
-    message: mavlink::ardupilotmega::MavMessage,
+    message: mavlink::dialects::ardupilotmega::MavMessage,
     status: Status,
 }
 
 impl MAVLinkMessageStatus {
-    fn update(&mut self, message: &MAVLinkMessage<mavlink::ardupilotmega::MavMessage>) {
+    fn update(&mut self, message: &MAVLinkMessage<mavlink::dialects::ardupilotmega::MavMessage>) {
         self.message = message.message.clone();
         self.status.update();
     }
@@ -72,7 +72,7 @@ struct MAVLinkVehicleComponentData {
 }
 
 impl MAVLinkVehicleComponentData {
-    fn update(&mut self, message: &MAVLinkMessage<mavlink::ardupilotmega::MavMessage>) {
+    fn update(&mut self, message: &MAVLinkMessage<mavlink::dialects::ardupilotmega::MavMessage>) {
         let message_name = message.message.message_name().to_string();
         self.messages
             .entry(message_name)
@@ -91,7 +91,7 @@ struct MAVLinkVehicleData {
 }
 
 impl MAVLinkVehicleData {
-    fn update(&mut self, message: &MAVLinkMessage<mavlink::ardupilotmega::MavMessage>) {
+    fn update(&mut self, message: &MAVLinkMessage<mavlink::dialects::ardupilotmega::MavMessage>) {
         let component_id = message.header.component_id;
         self.components
             .entry(component_id)
@@ -110,7 +110,7 @@ pub struct MAVLinkVehiclesData {
 
 impl MAVLinkVehiclesData {
     //TODO: Move message to reference
-    fn update(&mut self, message: MAVLinkMessage<mavlink::ardupilotmega::MavMessage>) {
+    fn update(&mut self, message: MAVLinkMessage<mavlink::dialects::ardupilotmega::MavMessage>) {
         let vehicle_id = message.header.system_id;
         self.vehicles
             .entry(vehicle_id)
@@ -153,7 +153,12 @@ lazy_static! {
     };
 }
 
-pub fn update((header, message): (mavlink::MavHeader, mavlink::ardupilotmega::MavMessage)) {
+pub fn update(
+    (header, message): (
+        mavlink::MavHeader,
+        mavlink::dialects::ardupilotmega::MavMessage,
+    ),
+) {
     DATA.messages
         .lock()
         .unwrap()

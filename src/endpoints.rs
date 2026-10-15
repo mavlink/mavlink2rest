@@ -129,11 +129,12 @@ pub async fn helper_mavlink(
 ) -> actix_web::Result<HttpResponse> {
     let message_name = query.into_inner().name;
 
-    let result = match mavlink::ardupilotmega::MavMessage::message_id_from_name(&message_name) {
-        Some(id) => mavlink::ardupilotmega::MavMessage::default_message_from_id(id)
-            .ok_or("Invalid message name."),
-        None => Err("Invalid message name."),
-    };
+    let result =
+        match mavlink::dialects::ardupilotmega::MavMessage::message_id_from_name(&message_name) {
+            Some(id) => mavlink::dialects::ardupilotmega::MavMessage::default_message_from_id(id)
+                .ok_or("Invalid message name."),
+            None => Err("Invalid message name."),
+        };
 
     match result {
         Ok(result) => {
@@ -168,8 +169,9 @@ pub async fn mavlink_post(
 
     debug!("MAVLink post received: {json_string}");
 
-    match json5::from_str::<data::MAVLinkMessage<mavlink::ardupilotmega::MavMessage>>(&json_string)
-    {
+    match json5::from_str::<data::MAVLinkMessage<mavlink::dialects::ardupilotmega::MavMessage>>(
+        &json_string,
+    ) {
         Ok(content) => match data.lock().unwrap().send(&content.header, &content.message) {
             Ok(_result) => {
                 data::update((content.header, content.message));

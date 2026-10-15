@@ -60,7 +60,7 @@ pub fn manager() -> Arc<Mutex<WebsocketManager>> {
     MANAGER.clone()
 }
 
-pub fn send(message: &MAVLinkMessage<mavlink::ardupilotmega::MavMessage>) {
+pub fn send(message: &MAVLinkMessage<mavlink::dialects::ardupilotmega::MavMessage>) {
     let name = message.message.message_name();
     let value = serde_json::to_value(message).unwrap();
     MANAGER.lock().unwrap().send(&value, name);
