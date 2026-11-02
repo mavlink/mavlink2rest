@@ -27,7 +27,7 @@ jobs:
     - name: Run SITL & MAVLink2Rest
       timeout-minutes: 5
       run: |
-        pip install --user aiohttp asyncio requests
+        pip install --user aiohttp asyncio requests uv
         wget https://firmware.ardupilot.org/Sub/stable-4.0.2/SITL_x86_64_linux_gnu/ardusub
         chmod +x ardusub
         ./ardusub --model vectored &
@@ -35,3 +35,4 @@ jobs:
         cargo run -- --connect tcpout:0.0.0.0:5760 &
         sleep 5
         ./tests/run.py
+        ./tests/websocket_forward.py
