@@ -11,7 +11,7 @@ use serde::{Deserialize, Serialize};
 
 use super::data;
 use super::mavlink_vehicle::MAVLinkVehicleArcMutex;
-use super::websocket_manager::WebsocketActor;
+use super::websocket_manager::{self, WebsocketActor};
 
 use log::*;
 use mavlink::Message;
@@ -178,6 +178,7 @@ pub async fn mavlink_post(
     ) {
         Ok(content) => match data.lock().unwrap().send(&content.header, &content.message) {
             Ok(_result) => {
+                websocket_manager::send(&content);
                 data::update((content.header, content.message));
                 return HttpResponse::Ok().await;
             }
