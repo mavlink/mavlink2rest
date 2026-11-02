@@ -66,7 +66,7 @@ async def start_client(url: str, amount: int) -> None:
 
 
 print("Test info..")
-response = requests.get(f"{API}/info").json()
+response = requests.get("http://0.0.0.0:8088/info").json()
 
 assert(response["version"] >= 0), "Info version is invalid."
 assert(response["service"]["name"] == "mavlink2rest"), "Invalid service name."
