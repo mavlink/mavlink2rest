@@ -24,6 +24,8 @@ pub struct WebsocketError {
 pub struct WebsocketActorContent {
     pub actor: Addr<WebsocketActor>,
     pub re: Option<Regex>,
+    pub system_id: Option<u8>,
+    pub component_id: Option<u8>,
 }
 
 #[derive(Derivative, Default)]
@@ -36,14 +38,18 @@ pub struct WebsocketManager {
 }
 
 impl WebsocketManager {
-    pub fn send(&self, value: &serde_json::Value, name: &str) {
+    pub fn send(&self, value: &serde_json::Value, header: &mavlink::MavHeader, name: &str) {
         if self.clients.is_empty() {
             return;
         }
 
         let string = serde_json::to_string_pretty(value).unwrap();
         for client in &self.clients {
-            let is_match = client.re.as_ref().map_or(false, |regx| regx.is_match(name));
+            let is_match = client.re.as_ref().map_or(false, |regx| regx.is_match(name))
+                && client.system_id.map_or(true, |id| id == header.system_id)
+                && client
+                    .component_id
+                    .map_or(true, |id| id == header.component_id);
             if is_match {
                 client.actor.do_send(StringMessage(string.clone()));
             }
@@ -63,20 +69,24 @@ pub fn manager() -> Arc<Mutex<WebsocketManager>> {
 pub fn send(message: &MAVLinkMessage<mavlink::dialects::ardupilotmega::MavMessage>) {
     let name = message.message.message_name();
     let value = serde_json::to_value(message).unwrap();
-    MANAGER.lock().unwrap().send(&value, name);
+    MANAGER.lock().unwrap().send(&value, &message.header, name);
 }
 
 #[derive(Debug)]
 pub struct WebsocketActor {
     server: Arc<Mutex<WebsocketManager>>,
     pub filter: String,
+    pub system_id: Option<u8>,
+    pub component_id: Option<u8>,
 }
 
 impl WebsocketActor {
-    pub fn new(message_filter: String) -> Self {
+    pub fn new(message_filter: String, system_id: Option<u8>, component_id: Option<u8>) -> Self {
         Self {
             server: MANAGER.clone(),
             filter: message_filter,
+            system_id,
+            component_id,
         }
     }
 }
@@ -103,6 +113,8 @@ impl StreamHandler<Result<ws::Message, ws::ProtocolError>> for WebsocketActor {
             .push(WebsocketActorContent {
                 actor: ctx.address(),
                 re: Regex::new(&self.filter).ok(),
+                system_id: self.system_id,
+                component_id: self.component_id,
             });
     }
 
