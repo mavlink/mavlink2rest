@@ -135,13 +135,18 @@ fn receive_message_loop(
                 }
             }
             Err(error) => {
-                error!("Recv error: {:?}", error);
-                if let mavlink::error::MessageReadError::Io(error) = error {
-                    if error.kind() == std::io::ErrorKind::UnexpectedEof {
-                        // We're probably running a file, time to exit!
-                        std::process::exit(0);
-                    };
+                if let mavlink::error::MessageReadError::Io(error) = &error {
+                    match error.kind() {
+                        // TCP connection has a read timeout, idle link is not an error
+                        std::io::ErrorKind::WouldBlock | std::io::ErrorKind::TimedOut => continue,
+                        std::io::ErrorKind::UnexpectedEof => {
+                            // We're probably running a file, time to exit!
+                            std::process::exit(0);
+                        }
+                        _ => {}
+                    }
                 }
+                error!("Recv error: {:?}", error);
             }
         }
     }
