@@ -119,7 +119,9 @@ impl StreamHandler<Result<ws::Message, ws::ProtocolError>> for WebsocketActor {
         match msg {
             Ok(ws::Message::Ping(msg)) => ctx.pong(&msg),
             Ok(ws::Message::Text(text)) => {
-                let text = match &self.server.lock().unwrap().new_message_callback {
+                // Release the manager lock before the callback, it sends to the other clients
+                let callback = self.server.lock().unwrap().new_message_callback.clone();
+                let text = match callback {
                     Some(callback) => callback(&text),
                     None => serde_json::to_string(&WebsocketError {
                         error: "MAVLink callback does not exist.".to_string(),
