@@ -58,7 +58,7 @@ jobs:
 
     - uses: svenstaro/upload-release-action@v2
       name: Upload binaries to release
-      if: ${{ github.event_name == 'push' }}
+      if: ${{ github.event_name == 'push' && !github.event.repository.fork }}
       with:
         repo_token: ${{ secrets.GITHUB_TOKEN }}
         file: mavlink2rest-${{ matrix.TARGET }}${{ matrix.EXTENSION }}
