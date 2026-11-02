@@ -6,12 +6,28 @@ use mavlink::{self, Message};
 use serde::{Deserialize, Serialize};
 
 //TODO: break all this types to a new file
-#[derive(Clone, Debug, Deserialize, Serialize)]
+#[derive(Clone, Debug, Deserialize)]
 struct Temporal {
     first_update: chrono::DateTime<chrono::Local>,
     last_update: chrono::DateTime<chrono::Local>,
     counter: i64,
     frequency: f32,
+}
+
+impl Serialize for Temporal {
+    fn serialize<S: serde::Serializer>(&self, serializer: S) -> Result<S::Ok, S::Error> {
+        use serde::ser::SerializeStruct;
+        // Computed when the request is served, so the client does not need to parse dates
+        let since_last_update =
+            (chrono::Local::now() - self.last_update).num_milliseconds() as f64 / 1000.0;
+        let mut state = serializer.serialize_struct("Temporal", 5)?;
+        state.serialize_field("first_update", &self.first_update)?;
+        state.serialize_field("last_update", &self.last_update)?;
+        state.serialize_field("last_update_seconds_ago", &since_last_update)?;
+        state.serialize_field("counter", &self.counter)?;
+        state.serialize_field("frequency", &self.frequency)?;
+        state.end()
+    }
 }
 
 impl Default for Temporal {
