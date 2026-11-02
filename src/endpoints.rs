@@ -43,6 +43,10 @@ pub struct Info {
 pub struct WebsocketQuery {
     /// Regex filter to selected the desired MAVLink messages by name
     filter: Option<String>,
+    /// Only messages from this system id
+    system_id: Option<u8>,
+    /// Only messages from this component id
+    component_id: Option<u8>,
 }
 
 #[derive(Apiv2Schema, Deserialize)]
@@ -198,14 +202,16 @@ pub async fn websocket(
     query: web::Query<WebsocketQuery>,
     stream: web::Payload,
 ) -> Result<HttpResponse, actix_web::Error> {
-    let filter = match query.into_inner().filter {
+    let query = query.into_inner();
+    let filter = match query.filter {
         Some(filter) => filter,
         _ => ".*".to_owned(),
     };
 
     debug!("New websocket with filter {:#?}", &filter);
 
-    ws::start(WebsocketActor::new(filter), &req, stream)
+    let actor = WebsocketActor::new(filter, query.system_id, query.component_id);
+    ws::start(actor, &req, stream)
 }
 
 async fn not_found_response(message: String) -> actix_web::Result<HttpResponse> {
