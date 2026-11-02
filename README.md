@@ -128,7 +128,8 @@ docker build --build-arg TARGET_ARCH=x86_64-unknown-linux-musl -t mavlink/mavlin
         "counter": 2981,
         "first_update": "2024-05-31T11:59:44.313941926-03:00",
         "frequency": 10.037036895751953,
-        "last_update": "2024-05-31T12:04:42.214212884-03:00"
+        "last_update": "2024-05-31T12:04:42.214212884-03:00",
+        "last_update_seconds_ago": 0.085
       }
     }
     ```
