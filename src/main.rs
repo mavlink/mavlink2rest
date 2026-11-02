@@ -69,12 +69,14 @@ fn ws_callback(
             .lock()
             .unwrap()
             .send(&content.header, &content.message);
-        if result.is_ok() {
-            data::update((content.header, content.message));
+        match result {
+            Ok(_) => {
+                data::update((content.header, content.message));
+                serde_json::json!({ "result": "ok" }).to_string()
+            }
+            Err(error) => serde_json::json!({ "error": error.to_string() }).to_string(),
         }
-
-        format!("{result:?}")
     } else {
-        String::from("Could not convert input message.")
+        serde_json::json!({ "error": "Could not convert input message." }).to_string()
     }
 }
