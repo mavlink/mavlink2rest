@@ -46,10 +46,10 @@ pub fn run(server_address: &str, mavlink_vehicle: &MAVLinkVehicleArcMutex) {
             _ => unreachable!("CLI should only allow supported values."),
         };
         App::new()
+            .wrap(actix_web::middleware::Logger::default())
             .wrap(Cors::permissive())
             // Record services and routes for paperclip OpenAPI plugin for Actix.
             .wrap_api()
-            //TODO Add middle man to print all http events
             .data(web::JsonConfig::default().error_handler(json_error_handler))
             .data(mavlink_vehicle.clone())
             //TODO: Add cors
