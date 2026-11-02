@@ -48,8 +48,19 @@ impl Status {
 
 #[derive(Clone, Debug, Deserialize, Serialize)]
 pub struct MAVLinkMessage<T> {
+    #[serde(with = "MavHeaderDef")]
     pub header: mavlink::MavHeader,
     pub message: T,
+}
+
+// Mirror of mavlink::MavHeader to make sequence optional on input
+#[derive(Deserialize, Serialize)]
+#[serde(remote = "mavlink::MavHeader")]
+struct MavHeaderDef {
+    system_id: u8,
+    component_id: u8,
+    #[serde(default)]
+    sequence: u8,
 }
 
 #[derive(Clone, Debug, Deserialize, Serialize)]
