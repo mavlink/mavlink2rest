@@ -71,6 +71,7 @@ fn ws_callback(
             .send(&content.header, &content.message);
         match result {
             Ok(_) => {
+                websocket_manager::send(&content);
                 data::update((content.header, content.message));
                 serde_json::json!({ "result": "ok" }).to_string()
             }
