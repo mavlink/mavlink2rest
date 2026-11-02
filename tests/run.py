@@ -10,7 +10,7 @@ API = "http://0.0.0.0:8088/v1"
 
 def vehicle_mode():
     response = requests.get(f"{API}/mavlink/vehicles/1/components/1/messages/HEARTBEAT").json()
-    return response["message"]["base_mode"]["bits"]
+    return response["message"]["base_mode"]
 
 def set_arm(arm: int):
     arm_message = {
@@ -82,10 +82,10 @@ assert(response["status"]["time"]["frequency"] > 0.95), "Heartbeat frequency is 
 print("Test ARM and DISARM..")
 assert(set_arm(0)), "Fail to send DISARM command"
 time.sleep(1)
-assert((vehicle_mode() & 128)  == 0), "Vehicle appears to be ARMED."
+assert("MAV_MODE_FLAG_SAFETY_ARMED" not in vehicle_mode()), "Vehicle appears to be ARMED."
 assert(set_arm(1)), "Fail to send ARM command"
 time.sleep(1)
-assert((vehicle_mode() & 128) != 0), "Failed to ARM vehicle."
+assert("MAV_MODE_FLAG_SAFETY_ARMED" in vehicle_mode()), "Failed to ARM vehicle."
 
 print("Test pretty..")
 response = requests.get(f"{API}/mavlink/vehicles/1/components/1/messages/HEARTBEAT")
