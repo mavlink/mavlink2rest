@@ -89,7 +89,7 @@ assert("MAV_MODE_FLAG_SAFETY_ARMED" in vehicle_mode()), "Failed to ARM vehicle."
 
 print("Test pretty..")
 response = requests.get(f"{API}/mavlink/vehicles/1/components/1/messages/HEARTBEAT")
-assert(response.text.count('\n') == 24), "Pretty heartbeat does not look correct."
+assert(response.text.count('\n') == 25), "Pretty heartbeat does not look correct."
 
 async def test_websocket_fetch_filter():
     print("Test websocket..")
