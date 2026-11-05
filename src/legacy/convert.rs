@@ -149,7 +149,10 @@ mod tests {
             "param_type": {"type": "MAV_PARAM_TYPE_REAL32"}
         });
         let legacy = modern_to_legacy(&modern).unwrap();
-        assert!(legacy.get("param_id").unwrap().is_array(), "{legacy:?}");
+        assert!(
+            legacy.get("param_id").unwrap().is_array(),
+            "param_id={legacy:?}"
+        );
         let back = legacy_to_modern(&legacy).unwrap();
         assert_eq!(back.get("param_id").unwrap(), "SCR_FSS");
     }
