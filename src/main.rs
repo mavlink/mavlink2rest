@@ -1,6 +1,7 @@
 mod cli;
 mod data;
 mod endpoints;
+mod legacy;
 mod mavlink_vehicle;
 mod server;
 mod websocket_manager;
@@ -8,6 +9,7 @@ mod websocket_manager;
 use std::sync::{Arc, Mutex};
 
 use data::MAVLinkMessage;
+use legacy::JsonSchema;
 use log::*;
 
 fn main() -> std::io::Result<()> {
@@ -38,8 +40,8 @@ fn main() -> std::io::Result<()> {
     websocket_manager::manager()
         .lock()
         .unwrap()
-        .new_message_callback = Some(Arc::new(move |value| {
-        ws_callback(inner_vehicle.clone(), value)
+        .new_message_callback = Some(Arc::new(move |value, schema| {
+        ws_callback(inner_vehicle.clone(), value, schema)
     }));
 
     loop {
@@ -61,23 +63,23 @@ fn ws_callback(
         Mutex<mavlink_vehicle::MAVLinkVehicle<mavlink::dialects::ardupilotmega::MavMessage>>,
     >,
     value: &str,
+    schema: JsonSchema,
 ) -> String {
-    if let Ok(content @ MAVLinkMessage::<mavlink::dialects::ardupilotmega::MavMessage> { .. }) =
-        serde_json::from_str(value)
-    {
-        let result = inner_vehicle
-            .lock()
-            .unwrap()
-            .send(&content.header, &content.message);
-        match result {
-            Ok(_) => {
-                websocket_manager::send(&content);
-                data::update((content.header, content.message));
-                serde_json::json!({ "result": "ok" }).to_string()
+    match endpoints::parse_incoming_message(value, schema) {
+        Ok(content) => {
+            let result = inner_vehicle
+                .lock()
+                .unwrap()
+                .send(&content.header, &content.message);
+            match result {
+                Ok(_) => {
+                    websocket_manager::send(&content);
+                    data::update((content.header, content.message));
+                    serde_json::json!({ "result": "ok" }).to_string()
+                }
+                Err(error) => serde_json::json!({ "error": error.to_string() }).to_string(),
             }
-            Err(error) => serde_json::json!({ "error": error.to_string() }).to_string(),
         }
-    } else {
-        serde_json::json!({ "error": "Could not convert input message." }).to_string()
+        Err(error) => serde_json::json!({ "error": error }).to_string(),
     }
 }
