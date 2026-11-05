@@ -31,6 +31,21 @@ fn add_v1_paths(scope: Scope) -> Scope {
         .service(web::resource("/ws/mavlink").route(web::get().to(endpoints::websocket)))
 }
 
+fn add_v0_paths(scope: Scope) -> Scope {
+    scope
+        .route(
+            "/helper/mavlink",
+            web::get().to(endpoints::helper_mavlink_legacy),
+        )
+        .route("/mavlink", web::get().to(endpoints::mavlink_legacy))
+        .route("/mavlink", web::post().to(endpoints::mavlink_post_legacy))
+        .route(
+            r"/mavlink/{path:.*}",
+            web::get().to(endpoints::mavlink_legacy),
+        )
+        .service(web::resource("/ws/mavlink").route(web::get().to(endpoints::websocket_legacy)))
+}
+
 // Start REST API server with the desired address
 pub fn run(server_address: &str, mavlink_vehicle: &MAVLinkVehicleArcMutex) {
     let server_address = server_address.to_string();
@@ -40,6 +55,7 @@ pub fn run(server_address: &str, mavlink_vehicle: &MAVLinkVehicleArcMutex) {
     // Start HTTP server thread
     let _ = System::new("http-server");
     HttpServer::new(move || {
+        let v0 = add_v0_paths(web::scope("/v0"));
         let v1 = add_v1_paths(web::scope("/v1"));
         let default = match cli::default_api_version() {
             1 => add_v1_paths(web::scope("")),
@@ -62,6 +78,7 @@ pub fn run(server_address: &str, mavlink_vehicle: &MAVLinkVehicleArcMutex) {
             )
             .route("/info", web::get().to(endpoints::info))
             // Be sure to have default as the latest endpoint, otherwise it does not work
+            .service(v0)
             .service(v1)
             .service(default)
             .build()
