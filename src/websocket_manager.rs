@@ -7,7 +7,8 @@ use regex::Regex;
 use serde::Serialize;
 use std::sync::{Arc, Mutex};
 
-use crate::MAVLinkMessage;
+use crate::data::MAVLinkMessage;
+use crate::legacy::{self, JsonSchema};
 
 pub struct StringMessage(String);
 
@@ -26,6 +27,7 @@ pub struct WebsocketActorContent {
     pub re: Option<Regex>,
     pub system_id: Option<u8>,
     pub component_id: Option<u8>,
+    pub schema: JsonSchema,
 }
 
 #[derive(Derivative, Default)]
@@ -34,7 +36,7 @@ pub struct WebsocketActorContent {
 pub struct WebsocketManager {
     pub clients: Vec<WebsocketActorContent>,
     #[derivative(Debug = "ignore")]
-    pub new_message_callback: Option<Arc<dyn Fn(&String) -> String + Send + Sync>>,
+    pub new_message_callback: Option<Arc<dyn Fn(&String, JsonSchema) -> String + Send + Sync>>,
 }
 
 impl WebsocketManager {
@@ -43,16 +45,35 @@ impl WebsocketManager {
             return;
         }
 
-        let string = serde_json::to_string_pretty(value).unwrap();
+        let modern = serde_json::to_string_pretty(value).unwrap();
+        let legacy = match legacy::modern_to_legacy(value) {
+            Ok(legacy_value) => Some(serde_json::to_string_pretty(&legacy_value).unwrap()),
+            Err(error) => {
+                log::error!("Failed to convert websocket payload to legacy JSON: {error}");
+                None
+            }
+        };
+
         for client in &self.clients {
             let is_match = client.re.as_ref().map_or(false, |regx| regx.is_match(name))
                 && client.system_id.map_or(true, |id| id == header.system_id)
                 && client
                     .component_id
                     .map_or(true, |id| id == header.component_id);
-            if is_match {
-                client.actor.do_send(StringMessage(string.clone()));
+            if !is_match {
+                continue;
             }
+            let payload = match client.schema {
+                JsonSchema::Modern => modern.clone(),
+                JsonSchema::Legacy => match &legacy {
+                    Some(content) => content.clone(),
+                    None => serde_json::to_string(&WebsocketError {
+                        error: "Failed to convert message to legacy JSON.".to_string(),
+                    })
+                    .unwrap(),
+                },
+            };
+            client.actor.do_send(StringMessage(payload));
         }
     }
 }
@@ -78,15 +99,22 @@ pub struct WebsocketActor {
     pub filter: String,
     pub system_id: Option<u8>,
     pub component_id: Option<u8>,
+    pub schema: JsonSchema,
 }
 
 impl WebsocketActor {
-    pub fn new(message_filter: String, system_id: Option<u8>, component_id: Option<u8>) -> Self {
+    pub fn new(
+        message_filter: String,
+        system_id: Option<u8>,
+        component_id: Option<u8>,
+        schema: JsonSchema,
+    ) -> Self {
         Self {
             server: MANAGER.clone(),
             filter: message_filter,
             system_id,
             component_id,
+            schema,
         }
     }
 }
@@ -115,6 +143,7 @@ impl StreamHandler<Result<ws::Message, ws::ProtocolError>> for WebsocketActor {
                 re: Regex::new(&self.filter).ok(),
                 system_id: self.system_id,
                 component_id: self.component_id,
+                schema: self.schema,
             });
     }
 
@@ -133,8 +162,9 @@ impl StreamHandler<Result<ws::Message, ws::ProtocolError>> for WebsocketActor {
             Ok(ws::Message::Text(text)) => {
                 // Release the manager lock before the callback, it sends to the other clients
                 let callback = self.server.lock().unwrap().new_message_callback.clone();
+                let schema = self.schema;
                 let text = match callback {
-                    Some(callback) => callback(&text),
+                    Some(callback) => callback(&text, schema),
                     None => serde_json::to_string(&WebsocketError {
                         error: "MAVLink callback does not exist.".to_string(),
                     })
