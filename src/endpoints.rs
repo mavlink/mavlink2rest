@@ -10,6 +10,8 @@ use paperclip::actix::{api_v2_operation, Apiv2Schema};
 use serde::{Deserialize, Serialize};
 
 use super::data;
+use super::legacy;
+use super::legacy::JsonSchema;
 use super::mavlink_vehicle::MAVLinkVehicleArcMutex;
 use super::websocket_manager::{self, WebsocketActor};
 
@@ -114,9 +116,24 @@ pub async fn llm() -> actix_web::Result<HttpResponse> {
 #[api_v2_operation]
 /// Provides an object containing all MAVLink messages received by the service
 pub async fn mavlink(req: HttpRequest) -> actix_web::Result<HttpResponse> {
+    mavlink_with_schema(req, JsonSchema::Modern).await
+}
+
+#[api_v2_operation]
+/// Provides MAVLink messages using the legacy 0.x JSON schema
+pub async fn mavlink_legacy(req: HttpRequest) -> actix_web::Result<HttpResponse> {
+    mavlink_with_schema(req, JsonSchema::Legacy).await
+}
+
+async fn mavlink_with_schema(
+    req: HttpRequest,
+    schema: JsonSchema,
+) -> actix_web::Result<HttpResponse> {
     let path = req.match_info().query("path");
-    let message = data::messages().pointer(path);
-    ok_response(message).await
+    match data::messages().pointer_with_schema(path, schema) {
+        Ok(message) => ok_response(message).await,
+        Err(error) => not_found_response(error).await,
+    }
 }
 
 pub fn parse_query<T: serde::ser::Serialize>(message: &T) -> String {
@@ -125,11 +142,39 @@ pub fn parse_query<T: serde::ser::Serialize>(message: &T) -> String {
     serde_json::to_string_pretty(&message).unwrap_or(error_message)
 }
 
+fn parse_query_schema<T: serde::ser::Serialize>(
+    message: &T,
+    schema: JsonSchema,
+) -> Result<String, String> {
+    let value = serde_json::to_value(message).map_err(|error| error.to_string())?;
+    let value = match schema {
+        JsonSchema::Modern => value,
+        JsonSchema::Legacy => legacy::modern_to_legacy(&value)?,
+    };
+    serde_json::to_string_pretty(&value).map_err(|error| error.to_string())
+}
+
 #[api_v2_operation]
 /// Returns an example of a MAVLink message matching the given message name
 pub async fn helper_mavlink(
     _req: HttpRequest,
     query: web::Query<MAVLinkHelperQuery>,
+) -> actix_web::Result<HttpResponse> {
+    helper_mavlink_with_schema(query, JsonSchema::Modern).await
+}
+
+#[api_v2_operation]
+/// Returns a legacy 0.x JSON example for the given MAVLink message name
+pub async fn helper_mavlink_legacy(
+    _req: HttpRequest,
+    query: web::Query<MAVLinkHelperQuery>,
+) -> actix_web::Result<HttpResponse> {
+    helper_mavlink_with_schema(query, JsonSchema::Legacy).await
+}
+
+async fn helper_mavlink_with_schema(
+    query: web::Query<MAVLinkHelperQuery>,
+    schema: JsonSchema,
 ) -> actix_web::Result<HttpResponse> {
     let message_name = query.into_inner().name;
 
@@ -141,15 +186,15 @@ pub async fn helper_mavlink(
         };
 
     match result {
-        Ok(result) => {
-            let msg = match result {
-                msg => parse_query(&data::MAVLinkMessage {
-                    header: mavlink::MavHeader::default(),
-                    message: msg,
-                }),
+        Ok(msg) => {
+            let envelope = data::MAVLinkMessage {
+                header: mavlink::MavHeader::default(),
+                message: msg,
             };
-
-            ok_response(msg).await
+            match parse_query_schema(&envelope, schema) {
+                Ok(content) => ok_response(content).await,
+                Err(error) => not_found_response(error).await,
+            }
         }
         Err(content) => not_found_response(parse_query(&content)).await,
     }
@@ -163,6 +208,26 @@ pub async fn mavlink_post(
     _req: HttpRequest,
     bytes: web::Bytes,
 ) -> actix_web::Result<HttpResponse> {
+    mavlink_post_with_schema(data, bytes, JsonSchema::Modern).await
+}
+
+#[api_v2_operation]
+#[allow(clippy::await_holding_lock)]
+/// Send a MAVLink message using the legacy 0.x JSON schema
+pub async fn mavlink_post_legacy(
+    data: web::Data<MAVLinkVehicleArcMutex>,
+    _req: HttpRequest,
+    bytes: web::Bytes,
+) -> actix_web::Result<HttpResponse> {
+    mavlink_post_with_schema(data, bytes, JsonSchema::Legacy).await
+}
+
+#[allow(clippy::await_holding_lock)]
+async fn mavlink_post_with_schema(
+    data: web::Data<MAVLinkVehicleArcMutex>,
+    bytes: web::Bytes,
+    schema: JsonSchema,
+) -> actix_web::Result<HttpResponse> {
     let json_string = match String::from_utf8(bytes.to_vec()) {
         Ok(content) => content,
         Err(err) => {
@@ -173,27 +238,33 @@ pub async fn mavlink_post(
 
     debug!("MAVLink post received: {json_string}");
 
-    match json5::from_str::<data::MAVLinkMessage<mavlink::dialects::ardupilotmega::MavMessage>>(
-        &json_string,
-    ) {
-        Ok(content) => match data.lock().unwrap().send(&content.header, &content.message) {
-            Ok(_result) => {
-                websocket_manager::send(&content);
-                data::update((content.header, content.message));
-                return HttpResponse::Ok().await;
-            }
-            Err(err) => {
-                return not_found_response(format!("Failed to send message: {err:?}")).await
-            }
-        },
-        Err(err) => {
-            debug!("Failed to parse ardupilotmega message: {err:?}");
-            let error_message =
-                format!("Failed to parse message, not a valid MAVLinkMessage: {err:?}");
-            debug!("{error_message}");
-            return not_found_response(error_message).await;
+    let content = match parse_incoming_message(&json_string, schema) {
+        Ok(content) => content,
+        Err(error) => return not_found_response(error).await,
+    };
+
+    match data.lock().unwrap().send(&content.header, &content.message) {
+        Ok(_result) => {
+            websocket_manager::send(&content);
+            data::update((content.header, content.message));
+            HttpResponse::Ok().await
         }
+        Err(err) => not_found_response(format!("Failed to send message: {err:?}")).await,
     }
+}
+
+pub fn parse_incoming_message(
+    json_string: &str,
+    schema: JsonSchema,
+) -> Result<data::MAVLinkMessage<mavlink::dialects::ardupilotmega::MavMessage>, String> {
+    let value: serde_json::Value =
+        json5::from_str(json_string).map_err(|error| format!("Failed to parse JSON5: {error}"))?;
+    let value = match schema {
+        JsonSchema::Modern => value,
+        JsonSchema::Legacy => legacy::legacy_to_modern(&value)?,
+    };
+    serde_json::from_value(value)
+        .map_err(|error| format!("Failed to parse message, not a valid MAVLinkMessage: {error:?}"))
 }
 
 #[api_v2_operation]
@@ -203,15 +274,34 @@ pub async fn websocket(
     query: web::Query<WebsocketQuery>,
     stream: web::Payload,
 ) -> Result<HttpResponse, actix_web::Error> {
+    websocket_with_schema(req, query, stream, JsonSchema::Modern).await
+}
+
+#[api_v2_operation]
+/// Websocket using the legacy 0.x JSON schema
+pub async fn websocket_legacy(
+    req: HttpRequest,
+    query: web::Query<WebsocketQuery>,
+    stream: web::Payload,
+) -> Result<HttpResponse, actix_web::Error> {
+    websocket_with_schema(req, query, stream, JsonSchema::Legacy).await
+}
+
+async fn websocket_with_schema(
+    req: HttpRequest,
+    query: web::Query<WebsocketQuery>,
+    stream: web::Payload,
+    schema: JsonSchema,
+) -> Result<HttpResponse, actix_web::Error> {
     let query = query.into_inner();
     let filter = match query.filter {
         Some(filter) => filter,
         _ => ".*".to_owned(),
     };
 
-    debug!("New websocket with filter {:#?}", &filter);
+    debug!("New websocket with filter {filter:#?} schema={schema:?}");
 
-    let actor = WebsocketActor::new(filter, query.system_id, query.component_id);
+    let actor = WebsocketActor::new(filter, query.system_id, query.component_id, schema);
     ws::start(actor, &req, stream)
 }
 
