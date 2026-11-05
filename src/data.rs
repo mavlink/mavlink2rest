@@ -148,24 +148,35 @@ impl MAVLinkVehiclesData {
             .update(&message);
     }
 
-    pub fn pointer(&self, path: &str) -> String {
+    pub fn pointer_with_schema(
+        &self,
+        path: &str,
+        schema: crate::legacy::JsonSchema,
+    ) -> Result<String, String> {
+        let value = serde_json::to_value(self).map_err(|error| error.to_string())?;
+        let value = match schema {
+            crate::legacy::JsonSchema::Modern => value,
+            crate::legacy::JsonSchema::Legacy => crate::legacy::modern_to_legacy(&value)?,
+        };
+
         if path.is_empty() {
-            return serde_json::to_string_pretty(self).unwrap();
+            return serde_json::to_string_pretty(&value).map_err(|error| error.to_string());
         }
 
         let path = format!("/{path}");
-
         dbg!(&path);
 
         if path == "/vehicles" {
-            return serde_json::to_string_pretty(&self.vehicles).unwrap();
-        };
+            let vehicles = value.get("vehicles").ok_or_else(|| "None".to_string())?;
+            return serde_json::to_string_pretty(vehicles).map_err(|error| error.to_string());
+        }
 
-        let value = serde_json::to_value(self).unwrap();
-        return match value.pointer(&path) {
-            Some(content) => serde_json::to_string_pretty(content).unwrap(),
-            None => "None".into(),
-        };
+        match value.pointer(&path) {
+            Some(content) => {
+                serde_json::to_string_pretty(content).map_err(|error| error.to_string())
+            }
+            None => Ok("None".into()),
+        }
     }
 }
 
