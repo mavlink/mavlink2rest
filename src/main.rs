@@ -3,6 +3,7 @@ mod data;
 mod endpoints;
 mod mavlink_vehicle;
 mod server;
+mod tlog;
 mod websocket_manager;
 
 use std::sync::{Arc, Mutex};
@@ -20,6 +21,8 @@ fn main() -> std::io::Result<()> {
         2 => mavlink::MavlinkVersion::V2,
         _ => panic!("Invalid mavlink version."),
     };
+
+    tlog::init(mavlink_version)?;
 
     let (system_id, component_id) = cli::mavlink_system_and_component_id();
     let vehicle =
@@ -47,6 +50,7 @@ fn main() -> std::io::Result<()> {
 
         while let Ok((header, message)) = vehicle.thread_rx_channel.recv() {
             debug!("Received: {:#?} {:#?}", header, message);
+            tlog::record(&header, &message);
             websocket_manager::send(&MAVLinkMessage {
                 header,
                 message: message.clone(),
