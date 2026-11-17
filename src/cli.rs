@@ -74,6 +74,10 @@ pub fn mavlink_system_and_component_id() -> (u8, u8) {
     (system_id, component_id)
 }
 
+pub fn tlog_path() -> Option<&'static str> {
+    return MANAGER.as_ref().clap_matches.value_of("tlog");
+}
+
 pub fn mavlink_send_initial_heartbeats() -> bool {
     return MANAGER
         .as_ref()
@@ -153,6 +157,13 @@ fn get_clap_matches<'a>() -> clap::ArgMatches<'a> {
                 .takes_value(false),
         )
         .arg(
+            clap::Arg::with_name("tlog")
+                .long("tlog")
+                .value_name("FILE")
+                .help("Records every received MAVLink message to this .tlog file (appending) and serves it at /v1/tlog.")
+                .takes_value(true),
+        )
+        .arg(
             clap::Arg::with_name("send-initial-heartbeats")
                 .long("send-initial-heartbeats")
                 .help("Send a burst of initial heartbeats to the autopilot spaced by 0.1 seconds to wake up MAVLink connection (useful for PX4-like autopilots).")
@@ -173,5 +184,6 @@ mod tests {
         assert_eq!(server_address(), "0.0.0.0:8088");
         assert_eq!(mavlink_version(), 2);
         assert_eq!(default_api_version(), 1);
+        assert_eq!(tlog_path(), None);
     }
 }
