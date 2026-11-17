@@ -112,6 +112,33 @@ pub async fn llm() -> actix_web::Result<HttpResponse> {
 }
 
 #[api_v2_operation]
+/// Download the .tlog file of received MAVLink messages (needs the --tlog argument)
+pub async fn tlog() -> actix_web::Result<HttpResponse> {
+    let path = match super::tlog::flush() {
+        Some(path) => path,
+        None => {
+            return HttpResponse::NotFound()
+                .content_type("text/plain")
+                .body("Recording is disabled, start mavlink2rest with --tlog <FILE>.")
+                .await
+        }
+    };
+    let content = std::fs::read(path)?;
+    let filename = Path::new(path)
+        .file_name()
+        .and_then(std::ffi::OsStr::to_str)
+        .unwrap_or("mavlink2rest.tlog");
+    HttpResponse::Ok()
+        .content_type("application/octet-stream")
+        .header(
+            "Content-Disposition",
+            format!("attachment; filename=\"{filename}\""),
+        )
+        .body(content)
+        .await
+}
+
+#[api_v2_operation]
 /// Provides an object containing all MAVLink messages received by the service
 pub async fn mavlink(req: HttpRequest) -> actix_web::Result<HttpResponse> {
     let path = req.match_info().query("path");
